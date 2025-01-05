@@ -4,7 +4,7 @@ This is a collaborative project where you, the participants, work together to re
 
 ## Architecture
 
-- Backend: Located in the [root](/) directory, built with Go.
+- Backend: Located in the [server](server/) directory, built with Go.
 - Frontend: Located under the [view](view/) directory, built with Svelte.
 
 ### Backend
@@ -37,11 +37,11 @@ bun run build
 
 2. Build Backend:
 ```sh
-cd ../
+cd server
 # For your platform
-go build -o build/native
+go build -o ../build/native
 # For arm64 linux
-GOOS=linux GOARCH=arm64 go build -o build/arm64
+GOOS=linux GOARCH=arm64 go build -o ../build/arm64
 ```
 
 3. Package:
