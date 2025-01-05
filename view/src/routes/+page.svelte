@@ -2,6 +2,7 @@
 	import { ArrowBigDown, ArrowBigUp, CloudAlert } from 'lucide-svelte';
 	import DigitScroller from '$lib/components/DigitScroller.svelte';
 	import { ProgressRing, Tooltip } from '@skeletonlabs/skeleton-svelte';
+	import Confetti from 'svelte-confetti';
 
 	const GOOGOL = (10n ** 100n).toString();
 	const GOOGOL_LENGTH = 101;
@@ -55,6 +56,38 @@
 </svelte:head>
 
 <div class="flex flex-col items-center justify-center space-y-6 p-4">
+	{#if counter === GOOGOL}
+		<div
+			class="pointer-events-none fixed left-0 top-[-50px] flex h-[100vh] w-[100vw] justify-center overflow-hidden"
+		>
+			<Confetti
+				x={[-5, 5]}
+				y={[0, 0.1]}
+				delay={[0, 2000]}
+				infinite
+				duration={5000}
+				amount={200}
+				fallDistance="100vh"
+			/>
+		</div>
+		<div class="relative">
+			<div class="absolute right-[10%] top-[40%]">
+				<Confetti amount={200} infinite />
+			</div>
+			<div class="absolute right-[90%] top-[40%]">
+				<Confetti amount={200} infinite />
+			</div>
+			<div
+				class="border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50 rounded-lg border-[1px] p-8 text-center shadow-sm"
+			>
+				<h2 class="h3 text-success-500 md:h2 md:text-success-500 mb-4">
+					🎉 Congratu&shy;lations! 🎉
+				</h2>
+				<h5 class="h6 md:h5 font-normal">You've reached One Googol!</h5>
+			</div>
+		</div>
+	{/if}
+
 	<div class="mx-auto flex w-full max-w-screen-xl flex-wrap justify-center gap-2">
 		{#each counter_splitted as digit, i}
 			<DigitScroller {digit} finished={step * 2 > Math.abs(i - 100)} />
@@ -81,7 +114,7 @@
 		<button
 			disabled={!(connected && counter != GOOGOL)}
 			title="Increment Counter"
-			class="btn-icon shadow-sm shadow-primary-500 preset-filled-primary-500"
+			class="btn-icon shadow-primary-500 preset-filled-primary-500 shadow-sm"
 			onclick={increment}
 		>
 			{#if updatingIncr}
@@ -100,7 +133,7 @@
 		<button
 			disabled={!(connected && counter != '0' && counter != GOOGOL)}
 			title="Decrement Counter"
-			class="btn-icon shadow-sm shadow-tertiary-500 preset-filled-tertiary-500"
+			class="btn-icon shadow-tertiary-500 preset-filled-tertiary-500 shadow-sm"
 			onclick={decrement}
 		>
 			{#if updatingDecr}
