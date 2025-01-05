@@ -1,7 +1,6 @@
 package db
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -12,64 +11,42 @@ import (
 // 10 ^ 100
 var OneGoogol = new(big.Int).Exp(big.NewInt(10), big.NewInt(100), nil)
 
-type Count struct {
-	Counter big.Int
-}
-
-// Convert to readable json
-func (c Count) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct {
-		Counter string `json:"counter"`
-	}{
-		Counter: c.Counter.String(),
-	})
-}
-
-// Convert from readable json
-func (c *Count) UnmarshalJSON(data []byte) error {
-	aux := struct {
-		Counter string `json:"counter"`
-	}{}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	if _, ok := c.Counter.SetString(aux.Counter, 10); !ok {
-		return fmt.Errorf("invalid big.Int string: %s", aux.Counter)
-	}
-	return nil
-}
-
 type CountStore struct {
 	mx    sync.Mutex
-	count Count
+	count big.Int
 }
 
 var GlobalCount = newCountStore()
 
 // Create a New CountStore
 func newCountStore() CountStore {
-	return CountStore{mx: sync.Mutex{}, count: Count{Counter: *big.NewInt(0)}}
+	return CountStore{
+		mx:    sync.Mutex{},
+		count: *big.NewInt(0),
+	}
 }
 
-// Loads the counter from a JSON file if it exists, otherwise does nothing
+// Loads the counter from a plain text file if it exists, otherwise does nothing
 func (cs *CountStore) LoadCountFromFile(filename string) {
 	file, err := os.Open(filename)
 	if err != nil {
+		// If the file doesn't exist, start with zero
 		return
 	}
 	defer file.Close()
 
-	var data Count
-	if err := json.NewDecoder(file).Decode(&data); err != nil {
+	var countStr string
+	if _, err := fmt.Fscanf(file, "%s", &countStr); err != nil {
 		return
 	}
 
-	cs.mx.Lock()
-	defer cs.mx.Unlock()
-	cs.count = data
+	if _, ok := cs.count.SetString(countStr, 10); !ok {
+		fmt.Printf("Invalid big.Int string in file: %s\n", countStr)
+		cs.count.SetInt64(0)
+	}
 }
 
-// Saves the current counter to a JSON file
+// Saves the current counter to a plain text file
 func (cs *CountStore) SaveCountToFile(filename string) error {
 	cs.mx.Lock()
 	defer cs.mx.Unlock()
@@ -80,10 +57,8 @@ func (cs *CountStore) SaveCountToFile(filename string) error {
 	}
 	defer file.Close()
 
-	if err := json.NewEncoder(file).Encode(cs.count); err != nil {
-		return err
-	}
-	return nil
+	_, err = file.WriteString(cs.count.String())
+	return err
 }
 
 // Get current count as a string
@@ -91,15 +66,15 @@ func (cs *CountStore) GetCounter() string {
 	cs.mx.Lock()
 	defer cs.mx.Unlock()
 
-	return cs.count.Counter.String()
+	return cs.count.String()
 }
 
-// Get current count as a struct
-func (cs *CountStore) Get() Count {
+// Get current count as big.Int
+func (cs *CountStore) Get() *big.Int {
 	cs.mx.Lock()
 	defer cs.mx.Unlock()
 
-	return cs.count
+	return new(big.Int).Set(&cs.count)
 }
 
 // Increments the counter by the current step size
@@ -107,13 +82,13 @@ func (cs *CountStore) Increment() {
 	cs.mx.Lock()
 	defer cs.mx.Unlock()
 
-	step := computeStep(&cs.count.Counter)
-	tmp := new(big.Int).Add(&cs.count.Counter, step)
+	step := computeStep(&cs.count)
+	tmp := new(big.Int).Add(&cs.count, step)
 
 	if tmp.Cmp(OneGoogol) > 0 {
-		cs.count.Counter.Set(OneGoogol)
+		cs.count.Set(OneGoogol)
 	} else {
-		cs.count.Counter.Set(tmp)
+		cs.count.Set(tmp)
 	}
 }
 
@@ -122,13 +97,13 @@ func (cs *CountStore) Decrement() {
 	cs.mx.Lock()
 	defer cs.mx.Unlock()
 
-	step := computeStep(&cs.count.Counter)
-	tmp := new(big.Int).Sub(&cs.count.Counter, step)
-	if cs.count.Counter.Cmp(OneGoogol) != 0 {
+	step := computeStep(&cs.count)
+	tmp := new(big.Int).Sub(&cs.count, step)
+	if cs.count.Cmp(OneGoogol) != 0 {
 		if tmp.Sign() < 0 {
-			cs.count.Counter.SetInt64(0)
+			cs.count.SetInt64(0)
 		} else {
-			cs.count.Counter.Set(tmp)
+			cs.count.Set(tmp)
 		}
 	}
 }

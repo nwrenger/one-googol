@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/nwrenger/one-googol/db"
@@ -9,9 +8,9 @@ import (
 
 // Handler for GET `/count`
 func GetCount(w http.ResponseWriter, r *http.Request) {
-	response := db.GlobalCount.Get()
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	count := db.GlobalCount.GetCounter()
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(count))
 }
 
 // Handler for POST `/count/increment`

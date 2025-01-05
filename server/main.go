@@ -27,11 +27,7 @@ type Args struct {
 
 func PathExists(path string) bool {
 	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	} else {
-		return false
-	}
+	return err == nil
 }
 
 func cli_args() Args {
@@ -43,16 +39,17 @@ func cli_args() Args {
 
 	flagSet := flag.NewFlagSet(module, flag.ExitOnError)
 	view := flagSet.String("view", "view", "Path to the view folder")
-	db := flagSet.String("db", "db.json", "Path to the database file")
+	db := flagSet.String("db", "db.txt", "Path to the database file")
 
 	flagSet.Parse(os.Args[2:])
 
 	if !PathExists(*view) {
-		log.Fatalf("The path '%s' is invalid!", *view)
+		log.Fatalf("The path for view content '%s' is invalid!", *view)
 	}
 
-	if !PathExists(*db) {
-		log.Fatalf("The path '%s' is invalid!", *db)
+	dbDir := filepath.Dir(*db)
+	if !PathExists(dbDir) {
+		log.Fatalf("The directory for the Database '%s' does not exist!", dbDir)
 	}
 
 	return Args{
@@ -87,10 +84,10 @@ func main() {
 	args := cli_args()
 	router := mux.NewRouter()
 
-	// count loading
+	// Load count from file
 	db.GlobalCount.LoadCountFromFile(args.db)
 
-	// count saving
+	// Setup graceful shutdown and count saving
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -105,21 +102,21 @@ func main() {
 		os.Exit(0)
 	}()
 
-	// ws
+	// Setup WebSocket routes
 	router.HandleFunc("/ws", ws.WsHandler)
 	ws.StartBroadcast()
 
-	// api
+	// Setup API routes
 	router.HandleFunc("/count", api.GetCount).Methods("GET")
 	router.HandleFunc("/count/increment", api.IncrementCount).Methods("POST")
 	router.HandleFunc("/count/decrement", api.DecrementCount).Methods("POST")
 
-	// file server
+	// Setup File Server
 	router.PathPrefix("/").Handler(http.FileServer(BetterFS{
 		fs: http.Dir(args.view),
 	}))
 
-	// start server
+	// Start server
 	log.Printf("Server started on '%s' with frontend at '%s' and Database at '%s'\n", args.host, args.view, args.db)
 	if err := http.ListenAndServe(args.host, router); err != nil {
 		log.Fatalln("Error starting server:", err)
