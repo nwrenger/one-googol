@@ -61,7 +61,6 @@ GOOS=linux GOARCH=arm64 go build -o ../build/arm64
 3. Package:
 ```sh
 cp -r view/build build/view
-touch build/db.txt
 ```
 
 ## Usage
