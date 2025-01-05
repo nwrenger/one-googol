@@ -38,7 +38,7 @@ bun run build
 2. Run Server:
 ```sh
 cd server
-go run . localhost:8080 --db data/db.json --view view/build
+go run . localhost:8080 --db data/db.json --view ../view/build
 ``` 
 
 ## Building
