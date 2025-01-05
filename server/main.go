@@ -23,6 +23,8 @@ type Args struct {
 	host string
 	view string
 	db   string
+	cert string
+	key  string
 }
 
 func PathExists(path string) bool {
@@ -32,7 +34,7 @@ func PathExists(path string) bool {
 
 func cli_args() Args {
 	if len(os.Args) < 2 {
-		log.Fatalf("Usage: %s <host(ip:port)> [-view <path>] [-db <path>]\n", module)
+		log.Fatalf("Usage: %s <host(ip:port)> [-view <path>] [-db <path>] [-cert <path>] [-key <path>]\n", module)
 	}
 
 	hostArg := os.Args[1]
@@ -40,6 +42,8 @@ func cli_args() Args {
 	flagSet := flag.NewFlagSet(module, flag.ExitOnError)
 	view := flagSet.String("view", "view", "Path to the view folder")
 	db := flagSet.String("db", "db.txt", "Path to the database file")
+	cert := flagSet.String("cert", "/etc/letsencrypt/live/one-googol.nwrenger.dev/fullchain.pem", "Path to the SSL certificate")
+	key := flagSet.String("key", "/etc/letsencrypt/live/one-googol.nwrenger.dev/privkey.pem", "Path to the SSL private key")
 
 	flagSet.Parse(os.Args[2:])
 
@@ -52,10 +56,20 @@ func cli_args() Args {
 		log.Fatalf("The directory for the Database '%s' does not exist!", dbDir)
 	}
 
+	if !PathExists(*cert) {
+		log.Fatalf("The SSL certificate path '%s' does not exist!", *cert)
+	}
+
+	if !PathExists(*key) {
+		log.Fatalf("The SSL key path '%s' does not exist!", *key)
+	}
+
 	return Args{
 		host: hostArg,
 		view: *view,
 		db:   *db,
+		cert: *cert,
+		key:  *key,
 	}
 }
 
@@ -118,7 +132,7 @@ func main() {
 
 	// Start server
 	log.Printf("Server started on '%s' with frontend at '%s' and Database at '%s'\n", args.host, args.view, args.db)
-	if err := http.ListenAndServe(args.host, router); err != nil {
+	if err := http.ListenAndServeTLS(args.host, args.cert, args.key, router); err != nil {
 		log.Fatalln("Error starting server:", err)
 	}
 }

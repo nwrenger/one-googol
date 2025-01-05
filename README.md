@@ -38,8 +38,10 @@ bun run build
 2. Run Server:
 ```sh
 cd server
-go run . localhost:8080 --db data/db.json --view ../view/build
-``` 
+# build tls cert and key
+./data/cert/gen.sh
+go run . localhost:8080 --db data/db.txt --view ../view/build --cert data/cert/cert.pem --key data/cert/key.pem
+```
 
 ## Building
 
@@ -66,6 +68,6 @@ cp -r view/build build/view
 ## Usage
 
 ```sh
-./one-googol localhost:8080 --view ./public --db ./data/counter.db
+./one-googol localhost:8080 --view ./public --db ./data/counter.txt --cert ./cert/cert.pem --key ./cert/key.pem
 ```
-_Starts the server on localhost at port 8080, serves the frontend from ./public, and uses ./data/counter.db for data persistence._
+_Starts the server on localhost at port 8080, serves the frontend from ./public, uses ./data/counter.txt for data persistence, and the ./cert directory for tls configuration._
