@@ -81,7 +81,7 @@
 		<button
 			disabled={!(connected && counter != GOOGOL)}
 			title="Increment Counter"
-			class="btn-icon shadow-primary-500 preset-filled-primary-500 shadow-sm"
+			class="btn-icon shadow-sm shadow-primary-500 preset-filled-primary-500"
 			onclick={increment}
 		>
 			{#if updatingIncr}
@@ -100,7 +100,7 @@
 		<button
 			disabled={!(connected && counter != '0' && counter != GOOGOL)}
 			title="Decrement Counter"
-			class="btn-icon shadow-tertiary-500 preset-filled-tertiary-500 shadow-sm"
+			class="btn-icon shadow-sm shadow-tertiary-500 preset-filled-tertiary-500"
 			onclick={decrement}
 		>
 			{#if updatingDecr}

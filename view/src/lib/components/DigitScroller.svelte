@@ -15,7 +15,7 @@
 <div
 	class="card {finished
 		? 'opacity-40'
-		: ''} border-surface-950 preset-tonal-surface shadow-surface-950 dark:border-surface-50 dark:shadow-surface-50 relative flex h-10 w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-sm transition-all duration-300"
+		: ''} relative flex h-10 w-8 items-center justify-center overflow-hidden border-[1px] border-surface-950 p-2 text-center shadow-sm shadow-surface-950 transition-all duration-300 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50"
 >
 	<div
 		class="absolute left-0 right-0 top-0 transition-transform duration-300"
