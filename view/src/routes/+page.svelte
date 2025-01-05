@@ -14,6 +14,7 @@
 	let updatingIncr = $state(false);
 	let updatingDecr = $state(false);
 	let connected = $state(false);
+	let tooltipOpen = $state(false);
 
 	socket.onopen = () => {
 		connected = true;
@@ -78,12 +79,12 @@
 				<Confetti amount={200} infinite />
 			</div>
 			<div
-				class="rounded-lg border-[1px] border-surface-950 p-8 text-center shadow-sm shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50"
+				class="border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50 rounded-lg border-[1px] p-8 text-center shadow-sm"
 			>
-				<h2 class="h3 mb-4 text-success-500 md:h2 md:text-success-500">
+				<h2 class="h3 text-success-500 md:h2 md:text-success-500 mb-4">
 					🎉 Congratu&shy;lations! 🎉
 				</h2>
-				<h5 class="h6 font-normal md:h5">You've reached One Googol!</h5>
+				<h5 class="h6 md:h5 font-normal">You've reached One Googol!</h5>
 			</div>
 		</div>
 	{/if}
@@ -97,16 +98,31 @@
 	<div class="flex items-center space-x-2 sm:space-x-3">
 		{#if !connected}
 			<Tooltip
+				bind:open={tooltipOpen}
 				positioning={{ placement: 'top' }}
 				base="flex items-center"
 				contentBase="card preset-filled-error-500 p-4"
 				openDelay={200}
+				closeOnClick={false}
+				closeOnPointerDown={false}
+				onclick={() => {
+					if (tooltipOpen) {
+						socket = new WebSocket('/ws');
+						tooltipOpen = false;
+					} else {
+						tooltipOpen = true;
+					}
+				}}
 			>
 				{#snippet trigger()}
 					<CloudAlert class="text-error-500" />
 				{/snippet}
 				{#snippet content()}
-					No WebSocket connection established!
+					<p class="text-center text-sm">
+						No WebSocket connection established!
+						<br />
+						Click the Icon again to reconnect!
+					</p>
 				{/snippet}
 			</Tooltip>
 		{/if}
@@ -114,7 +130,7 @@
 		<button
 			disabled={!(connected && counter != GOOGOL)}
 			title="Increment Counter"
-			class="btn-icon shadow-sm shadow-primary-500 preset-filled-primary-500"
+			class="btn-icon shadow-primary-500 preset-filled-primary-500 shadow-sm"
 			onclick={increment}
 		>
 			{#if updatingIncr}
@@ -133,7 +149,7 @@
 		<button
 			disabled={!(connected && counter != '0' && counter != GOOGOL)}
 			title="Decrement Counter"
-			class="btn-icon shadow-sm shadow-tertiary-500 preset-filled-tertiary-500"
+			class="btn-icon shadow-tertiary-500 preset-filled-tertiary-500 shadow-sm"
 			onclick={decrement}
 		>
 			{#if updatingDecr}
@@ -149,7 +165,12 @@
 			{/if}
 		</button>
 	</div>
-	<p class="transition-all duration-300 {counter === GOOGOL ? 'opacity-40' : ''}">
-		Step Level: <code class="code">{step}</code>
+	<p
+		class="transition-all duration-300 {counter === GOOGOL
+			? 'opacity-40'
+			: ''} flex items-center space-x-2"
+	>
+		<span> Step Level: </span>
+		<code class="code">{step}</code>
 	</p>
 </div>
