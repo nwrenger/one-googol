@@ -78,19 +78,19 @@
 				<Confetti amount={200} infinite />
 			</div>
 			<div
-				class="border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50 rounded-lg border-[1px] p-8 text-center shadow-sm"
+				class="rounded-lg border-[1px] border-surface-950 p-8 text-center shadow-sm shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50"
 			>
-				<h2 class="h3 text-success-500 md:h2 md:text-success-500 mb-4">
+				<h2 class="h3 mb-4 text-success-500 md:h2 md:text-success-500">
 					🎉 Congratu&shy;lations! 🎉
 				</h2>
-				<h5 class="h6 md:h5 font-normal">You've reached One Googol!</h5>
+				<h5 class="h6 font-normal md:h5">You've reached One Googol!</h5>
 			</div>
 		</div>
 	{/if}
 
 	<div class="mx-auto flex w-full max-w-screen-xl flex-wrap justify-center gap-2">
 		{#each counter_splitted as digit, i}
-			<DigitScroller {digit} finished={step * 2 > Math.abs(i - 100)} />
+			<DigitScroller {digit} finished={step * 2 > Math.abs(i - 100) || counter === GOOGOL} />
 		{/each}
 	</div>
 
@@ -114,7 +114,7 @@
 		<button
 			disabled={!(connected && counter != GOOGOL)}
 			title="Increment Counter"
-			class="btn-icon shadow-primary-500 preset-filled-primary-500 shadow-sm"
+			class="btn-icon shadow-sm shadow-primary-500 preset-filled-primary-500"
 			onclick={increment}
 		>
 			{#if updatingIncr}
@@ -133,7 +133,7 @@
 		<button
 			disabled={!(connected && counter != '0' && counter != GOOGOL)}
 			title="Decrement Counter"
-			class="btn-icon shadow-tertiary-500 preset-filled-tertiary-500 shadow-sm"
+			class="btn-icon shadow-sm shadow-tertiary-500 preset-filled-tertiary-500"
 			onclick={decrement}
 		>
 			{#if updatingDecr}
@@ -149,7 +149,7 @@
 			{/if}
 		</button>
 	</div>
-	<div>
+	<p class="transition-all duration-300 {counter === GOOGOL ? 'opacity-40' : ''}">
 		Step Level: <code class="code">{step}</code>
-	</div>
+	</p>
 </div>
