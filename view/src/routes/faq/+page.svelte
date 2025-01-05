@@ -110,9 +110,9 @@
 		<h4 class="h4">What Happens When One Googol Is Reached?</h4>
 		<p>
 			Then you've reached a number where it would take 3,1709791984×10<sup>92</sup> Years when every
-			second its incremented by one. A number that big it's over the Atom count in the visible
-			universe by 10<sup>20</sup>. A number which Google inherited their name from. A number that is
-			impossible to be reached under normal circumstances! Isn't that enough?
+			second its incremented by one. A number which is that big that it's over the Atom count in the
+			visible universe by 10<sup>20</sup>. A number which Google inherited their name from. A number
+			that is impossible to reach under normal circumstances! Isn't that enough?
 		</p>
 	</section>
 </div>
