@@ -6,7 +6,7 @@
 	let { children } = $props();
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-5">
+<div class="mx-auto flex h-full max-w-7xl flex-col px-4 py-5">
 	<header class="flex-shrink-0">
 		<div class="flex h-12 w-full items-center justify-between">
 			<div class="hidden sm:flex">
