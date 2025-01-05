@@ -25,7 +25,7 @@ It also saves the current count on save in the file provided by the `--db` arg.
 
 ### Frontend
 
-The Svelte-based frontend provides an interactive user interface for participants to view and manipulate the counter and a guide on #[How to Play](https://one-googol.nwrenger.dev/faq).
+The Svelte-based frontend provides an interactive user interface for participants to view and manipulate the counter and a guide on [How to Play](https://one-googol.nwrenger.dev/faq).
 
 ## Building
 
