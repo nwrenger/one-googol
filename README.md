@@ -27,6 +27,20 @@ It also saves the current count on save in the file provided by the `--db` arg.
 
 The Svelte-based frontend provides an interactive user interface for participants to view and manipulate the counter and a guide on [How to Play](https://one-googol.nwrenger.dev/faq).
 
+## Development
+
+1. Build Frontend:
+```sh
+cd view
+bun run build
+```
+
+2. Run Server:
+```sh
+cd server
+go run . localhost:8080 --db data/db.json --view view/build
+``` 
+
 ## Building
 
 1. Build Frontend:
