@@ -59,7 +59,7 @@
 	<section class="space-y-6">
 		<h4 class="h4">What are Step Levels?</h4>
 		<p>
-			The <code class="code">Step Level</code> dynamically adjusts the increment or decrement value based
+			A <code class="code">Step Level</code> dynamically adjusts the increment or decrement value based
 			on the counter's magnitude. It's calculated by grouping the number of digits into sets of three
 			using the formula:
 		</p>
