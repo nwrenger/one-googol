@@ -12,7 +12,7 @@ This is a collaborative project where you, the participants, work together to re
 The Go-based backend manages the application's core logic, API endpoints, and real-time communication. Below are the primary routes and their purposes:
 
 - **HTTP API Routes:**
-  - `GET /count`: Returns a JSON response with the current count.
+  - `GET /count`: Returns a text response with the current count.
 
   - `POST /count/increment`: Increases the counter by the defined step size and returns the updated value.
 
