@@ -4,8 +4,8 @@ This is a collaborative project where you, the participants, work together to re
 
 ## Architecture
 
-- Backend: Located in the #[root](/) directory, built with Go.
-- Frontend: Located under the #[view](view/) directory, built with Svelte.
+- Backend: Located in the [root](/) directory, built with Go.
+- Frontend: Located under the [view](view/) directory, built with Svelte.
 
 ### Backend
 
