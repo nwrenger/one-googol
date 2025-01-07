@@ -2,9 +2,14 @@
 	interface Props {
 		digit: string;
 		finished: boolean;
+		background?: string;
 	}
 
-	let { digit = '0', finished = false }: Props = $props();
+	let {
+		digit = '0',
+		finished = false,
+		background = 'border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50'
+	}: Props = $props();
 	let digitIndex = $derived(parseInt(digit, 10) || 0);
 
 	const digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -15,7 +20,7 @@
 <div
 	class="card {finished
 		? 'opacity-40'
-		: ''} relative flex h-10 w-8 items-center justify-center overflow-hidden border-[1px] border-surface-950 p-2 text-center shadow-sm shadow-surface-950 transition-all duration-300 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50"
+		: ''} relative flex h-10 w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-sm transition-transform duration-300 {background}"
 >
 	<div
 		class="absolute left-0 right-0 top-0 transition-transform duration-300"

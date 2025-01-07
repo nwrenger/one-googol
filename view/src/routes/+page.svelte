@@ -1,47 +1,47 @@
 <script lang="ts">
 	import { ArrowBigDown, ArrowBigUp, CloudAlert } from 'lucide-svelte';
 	import DigitScroller from '$lib/components/DigitScroller.svelte';
-	import { ProgressRing, Tooltip } from '@skeletonlabs/skeleton-svelte';
+	import { Segment, Tooltip } from '@skeletonlabs/skeleton-svelte';
 	import Confetti from 'svelte-confetti';
+	import { onNavigate } from '$app/navigation';
+	import { increaseType } from '$lib';
 
 	const GOOGOL = (10n ** 100n).toString();
 	const GOOGOL_LENGTH = 101;
 
 	let counter = $state('0');
 	let counter_splitted = $derived(counter.padStart(GOOGOL_LENGTH, '0').split(''));
+	let clients = $state(['0', '0']);
 	let step = $derived(calculateStepLevel(counter));
-	let socket = new WebSocket(`/ws`);
-	let updatingIncr = $state(false);
-	let updatingDecr = $state(false);
+	let socket = connect();
 	let connected = $state(false);
 	let tooltipOpen = $state(false);
 
-	socket.onopen = () => {
-		connected = true;
-	};
+	$effect(() => onIncreaseType($increaseType));
+	onNavigate(() => socket.close());
 
-	socket.onmessage = (event) => {
-		counter = event.data;
-		connected = true;
-		updatingIncr = false;
-		updatingDecr = false;
-	};
+	function connect(): WebSocket {
+		let new_socket = new WebSocket(`/ws`);
 
-	socket.onclose = () => {
-		connected = false;
-	};
+		new_socket.onopen = () => {
+			connected = true;
+		};
 
-	function increment() {
-		if (connected && socket) {
-			socket.send('increment');
-			updatingIncr = true;
-		}
+		new_socket.onmessage = (event) => {
+			[counter, clients[0], clients[1]] = (event.data as string).split(',');
+			connected = true;
+		};
+
+		new_socket.onclose = () => {
+			connected = false;
+		};
+
+		return new_socket;
 	}
 
-	function decrement() {
-		if (connected && socket) {
-			socket.send('decrement');
-			updatingDecr = true;
+	function onIncreaseType(increaseType: string) {
+		if (connected && increaseType != '') {
+			socket.send(increaseType);
 		}
 	}
 
@@ -79,12 +79,12 @@
 				<Confetti amount={200} infinite />
 			</div>
 			<div
-				class="rounded-lg border-[1px] border-surface-950 p-8 text-center shadow-sm shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50"
+				class="border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50 rounded-lg border-[1px] p-8 text-center shadow-sm"
 			>
-				<h2 class="h3 mb-4 text-success-500 md:h2 md:text-success-500">
+				<h2 class="h3 text-success-500 md:h2 md:text-success-500 mb-4">
 					🎉 Congratu&shy;lations! 🎉
 				</h2>
-				<h5 class="h6 font-normal md:h5">You've reached One Googol!</h5>
+				<h5 class="h6 md:h5 font-normal">You've reached One Googol!</h5>
 			</div>
 		</div>
 	{/if}
@@ -96,6 +96,38 @@
 	</div>
 
 	<div class="flex items-center space-x-2 sm:space-x-3">
+		<div
+			class="card {counter === GOOGOL
+				? 'opacity-40'
+				: ''} border-primary-500 shadow-primary-500 preset-tonal-primary relative flex h-10 w-fit min-w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-sm transition-transform duration-300"
+		>
+			{clients[0]}
+		</div>
+
+		<Segment
+			name="increaseType"
+			background="preset-outlined-surface-950-50 preset-tonal-surface shadow-sm shadow-surface-950 dark:shadow-surface-50"
+			bind:value={$increaseType}
+		>
+			<Segment.Item disabled={!(connected && counter != GOOGOL)} value="increment">
+				<ArrowBigUp class="text-primary-500" />
+			</Segment.Item>
+			<Segment.Item
+				disabled={!(connected && counter != '0' && counter != GOOGOL)}
+				value="decrement"
+			>
+				<ArrowBigDown class="text-tertiary-500" />
+			</Segment.Item>
+		</Segment>
+
+		<div
+			class="card {counter === GOOGOL
+				? 'opacity-40'
+				: ''} border-tertiary-500 shadow-tertiary-500 preset-tonal-tertiary relative flex h-10 w-fit min-w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-sm transition-transform duration-300"
+		>
+			{clients[1]}
+		</div>
+
 		{#if !connected}
 			<Tooltip
 				bind:open={tooltipOpen}
@@ -107,7 +139,7 @@
 				closeOnPointerDown={false}
 				onclick={() => {
 					if (tooltipOpen) {
-						socket = new WebSocket('/ws');
+						socket = connect();
 						tooltipOpen = false;
 					} else {
 						tooltipOpen = true;
@@ -121,55 +153,13 @@
 					<p class="text-center text-sm">
 						No WebSocket connection established!
 						<br />
-						Click the Icon again to reconnect!
+						Click again to reconnect!
 					</p>
 				{/snippet}
 			</Tooltip>
 		{/if}
-
-		<button
-			disabled={!(connected && counter != GOOGOL)}
-			title="Increment Counter"
-			class="btn-icon shadow-sm shadow-primary-500 preset-filled-primary-500"
-			onclick={increment}
-		>
-			{#if updatingIncr}
-				<ProgressRing
-					value={null}
-					size="size-4"
-					strokeWidth="3px"
-					meterStroke="stroke-surface-50"
-					trackStroke="stroke-surface-950"
-				/>
-			{:else}
-				<ArrowBigUp />
-			{/if}
-		</button>
-
-		<button
-			disabled={!(connected && counter != '0' && counter != GOOGOL)}
-			title="Decrement Counter"
-			class="btn-icon shadow-sm shadow-tertiary-500 preset-filled-tertiary-500"
-			onclick={decrement}
-		>
-			{#if updatingDecr}
-				<ProgressRing
-					value={null}
-					size="size-4"
-					strokeWidth="3px"
-					meterStroke="stroke-surface-50"
-					trackStroke="stroke-surface-950"
-				/>
-			{:else}
-				<ArrowBigDown />
-			{/if}
-		</button>
 	</div>
-	<p
-		class="transition-all duration-300 {counter === GOOGOL
-			? 'opacity-40'
-			: ''} flex items-center space-x-2"
-	>
+	<p class="{counter === GOOGOL ? 'opacity-40' : ''} flex items-center space-x-2">
 		<span> Step Level: </span>
 		<code class="code">{step}</code>
 	</p>

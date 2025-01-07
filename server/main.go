@@ -12,7 +12,6 @@ import (
 	"syscall"
 
 	"github.com/gorilla/mux"
-	"github.com/nwrenger/one-googol/api"
 	"github.com/nwrenger/one-googol/db"
 	"github.com/nwrenger/one-googol/ws"
 )
@@ -98,8 +97,9 @@ func main() {
 	args := cli_args()
 	router := mux.NewRouter()
 
-	// Load count from file
-	db.GlobalCount.LoadCountFromFile(args.db)
+	// Setup Database
+	database := db.Database{}
+	database.LoadCountFromFile(args.db)
 
 	// Setup graceful shutdown and count saving
 	sigChan := make(chan os.Signal, 1)
@@ -108,7 +108,7 @@ func main() {
 		<-sigChan
 		log.Println("Gracefully shutting down...")
 
-		if err := db.GlobalCount.SaveCountToFile(args.db); err != nil {
+		if err := database.SaveCountToFile(args.db); err != nil {
 			log.Fatalf("Error saving count to file: %v\n", err)
 		} else {
 			log.Printf("Count saved successfully to %s\n", args.db)
@@ -117,13 +117,9 @@ func main() {
 	}()
 
 	// Setup WebSocket routes
-	router.HandleFunc("/ws", ws.WsHandler)
-	ws.StartBroadcast()
-
-	// Setup API routes
-	router.HandleFunc("/count", api.GetCount).Methods("GET")
-	router.HandleFunc("/count/increment", api.IncrementCount).Methods("POST")
-	router.HandleFunc("/count/decrement", api.DecrementCount).Methods("POST")
+	webSocket := ws.WebSocket{}
+	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { webSocket.WsHandler(&database, w, r) })
+	go webSocket.Updater(&database)
 
 	// Setup File Server
 	router.PathPrefix("/").Handler(http.FileServer(BetterFS{
@@ -132,7 +128,8 @@ func main() {
 
 	// Start server
 	log.Printf("Server started on '%s' with frontend at '%s' and Database at '%s'\n", args.host, args.view, args.db)
-	if err := http.ListenAndServeTLS(args.host, args.cert, args.key, router); err != nil {
+	if err := http.ListenAndServe(args.host, router); err != nil {
+		// if err := http.ListenAndServeTLS(args.host, args.cert, args.key, router); err != nil {
 		log.Fatalln("Error starting server:", err)
 	}
 }

@@ -10,100 +10,35 @@
 		<h3 class="h3">Welcome to One Googol!</h3>
 		<p>
 			One Googol is a collaborative project where you, the participants, work together to reach a
-			number with 100 zeros, known as one Googol.
+			number with 100 zeros, known as a googol.
 		</p>
 	</section>
 
 	<section class="space-y-6">
 		<h4 class="h4">How Does It Work?</h4>
 		<p>
-			The website utilizes WebSockets to maintain concurrent connections and provide real-time
-			counter updates. If you want to begin to flood the site with counter updates, use the api:
-		</p>
-		<dl class="space-y-4">
-			<div>
-				<dt class="flex items-center space-x-3 font-bold">
-					<span>GET /count</span> <code class="code">GET</code>
-				</dt>
-				<dd class="opacity-60">Retrieves the current value of the counter.</dd>
-			</div>
-			<div>
-				<dt class="flex items-center space-x-3 font-bold">
-					<span>POST /count/increment</span> <code class="code">POST</code>
-				</dt>
-				<dd class="opacity-60">
-					Increments the counter by the current Step Size and returns the updated value.
-				</dd>
-			</div>
-			<div>
-				<dt class="flex items-center space-x-3 font-bold">
-					<span>POST /count/decrement</span> <code class="code">POST</code>
-				</dt>
-				<dd class="opacity-60">
-					Decrements the counter by the current Step Size and returns the updated value.
-				</dd>
-			</div>
-		</dl>
-		<p>
-			Be aware that it's not the best Idea to overflood the server with too many requests. Although
-			there aren't any software limits, there are hardware limits! Find the ideal spot!
+			On the <a href="/" class="anchor">main page</a> you'll find the counter, an
+			<span class="text-primary-500">increment</span>
+			and <span class="text-tertiary-500">decrement</span> selector and on each side of this selector
+			are the counts of other clients. This will be shown to you in real-time (refreshed every 250ms)
+			by utilizing a WebSocket connection to the server.
 		</p>
 	</section>
 
 	<section class="space-y-6">
-		<h4 class="h4">How can the Step Size be determined?</h4>
-		<p>The Step Size can be calculated by the Step Level:</p>
-		<pre class="pre">stepSize = 100<sup>stepLevel</sup></pre>
-	</section>
-
-	<section class="space-y-6">
-		<h4 class="h4">What are Step Levels?</h4>
+		<h4 class="h4">How does the scaling work?</h4>
 		<p>
-			A <code class="code">Step Level</code> dynamically adjusts the increment or decrement value based
-			on the counter's magnitude. It's calculated by grouping the number of digits into sets of three
-			using the formula:
+			Because a googol is a massive number, I've implement automatic scaling. It works by
+			calculating first a Step Level, where the number of digits are grouped into sets of three
+			using this formula:
 		</p>
-		<pre class="pre">stepLevel = floor((digits - 1) / 3)</pre>
-		<p>Here's how step levels operate across different ranges:</p>
-		<dl class="space-y-4">
-			<div>
-				<dt class="font-bold">Level 0 (1-3 digits)</dt>
-				<dd class="opacity-60">
-					<dl class="space-y-1">
-						<div>
-							<dt class="font-semibold">Digit Range:</dt>
-							<dd>1 to 999</dd>
-						</div>
-						<div>
-							<dt class="font-semibold">Step Size:</dt>
-							<dd>100<sup>0</sup> = <strong>1</strong></dd>
-						</div>
-					</dl>
-				</dd>
-			</div>
-			<div>
-				<dt class="font-bold">Level 1 (4-6 digits)</dt>
-				<dd class="opacity-60">
-					<dl class="space-y-1">
-						<div>
-							<dt class="font-semibold">Digit Range:</dt>
-							<dd>1,000 to 999,999</dd>
-						</div>
-						<div>
-							<dt class="font-semibold">Step Size:</dt>
-							<dd>100<sup>1</sup> = <strong>100</strong></dd>
-						</div>
-					</dl>
-				</dd>
-			</div>
-			<div>
-				<dt class="font-bold">Level 2 and Beyond</dt>
-				<dd class="opacity-60">
-					Each subsequent level increases the Step Size by a factor of 100 for every additional set
-					of three digits.
-				</dd>
-			</div>
-		</dl>
+		<pre class="pre">Step Level = floor((digits - 1) / 3)</pre>
+		<p>And then this Step Level is used to determine the Step Size:</p>
+		<pre class="pre">Step Size = 100<sup>Step Level</sup></pre>
+		<p>
+			On each increase and decrease the Step Size is used. It's also visible on the counter itself,
+			by the inactive and grayed out digits.
+		</p>
 	</section>
 
 	<section class="space-y-6">

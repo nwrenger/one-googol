@@ -1,4 +1,5 @@
 data/db.txt
+data/websockets.js
 /data/cert/*
 !/data/cert/gen.sh
 go.sum
