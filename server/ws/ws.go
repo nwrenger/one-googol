@@ -12,7 +12,14 @@ import (
 )
 
 type WebSocket struct {
-	clients sync.Map // map[*websocket.Conn]Status
+	clients sync.Map // map[*websocket.Conn]*Client
+}
+
+// Represents a WebSocket connection and its state.
+type Client struct {
+	conn   *websocket.Conn
+	status Status
+	mx     sync.Mutex
 }
 
 // Client's state.
@@ -38,29 +45,33 @@ func (ws *WebSocket) WsHandler(database *db.Database, w http.ResponseWriter, r *
 		return
 	}
 
-	ws.clients.Store(conn, Pending)
-	ws.sendCount(conn, database)
+	client := &Client{
+		conn:   conn,
+		status: Pending,
+	}
+	ws.clients.Store(conn, client)
+	ws.sendCount(client, database)
 
-	go ws.handleConnection(conn)
+	go ws.handleConnection(client)
 }
 
 // Manages the WebSocket connection lifecycle.
-func (ws *WebSocket) handleConnection(conn *websocket.Conn) {
+func (ws *WebSocket) handleConnection(client *Client) {
 	defer func() {
-		ws.clients.Delete(conn)
-		conn.Close()
+		ws.clients.Delete(client.conn)
+		client.conn.Close()
 	}()
 
 	// Set read deadlines and handle ping/pong to keep the connection alive.
-	conn.SetReadLimit(512)
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	conn.SetPongHandler(func(string) error {
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	client.conn.SetReadLimit(512)
+	client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	client.conn.SetPongHandler(func(string) error {
+		client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
 
 	for {
-		messageType, msg, err := conn.ReadMessage()
+		messageType, msg, err := client.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("WebSocket unexpected close: %v", err)
@@ -75,9 +86,9 @@ func (ws *WebSocket) handleConnection(conn *websocket.Conn) {
 		command := string(msg)
 		switch command {
 		case "increment":
-			ws.clients.Store(conn, Increment)
+			client.status = Increment
 		case "decrement":
-			ws.clients.Store(conn, Decrement)
+			client.status = Decrement
 		default:
 			log.Printf("Unknown command: %s", command)
 		}
@@ -85,30 +96,40 @@ func (ws *WebSocket) handleConnection(conn *websocket.Conn) {
 }
 
 // Sends the current count and client metrics to a specific client.
-func (ws *WebSocket) sendCount(conn *websocket.Conn, database *db.Database) {
+func (ws *WebSocket) sendCount(client *Client, database *db.Database) {
 	currentCount := database.GetString()
 	meter := ws.meterClients()
 	message := fmt.Sprintf("%s,%d,%d", currentCount, meter.Increment, meter.Decrement)
 
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+	// Messages need to be synchronously written to the websocket
+	client.mx.Lock()
+	err := client.conn.WriteMessage(websocket.TextMessage, []byte(message))
+	client.mx.Unlock()
+
+	if err != nil {
 		log.Println("Error sending initial count:", err)
-		ws.clients.Delete(conn)
-		conn.Close()
+		ws.clients.Delete(client.conn)
+		client.conn.Close()
 	}
 }
 
 // Sends a message to all connected clients.
 func (ws *WebSocket) broadcast(message string) {
 	ws.clients.Range(func(key, value interface{}) bool {
-		conn, ok := key.(*websocket.Conn)
+		client, ok := value.(*Client)
 		if !ok {
 			return true
 		}
 
-		if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+		// Messages need to be synchronously written to the websocket
+		client.mx.Lock()
+		err := client.conn.WriteMessage(websocket.TextMessage, []byte(message))
+		client.mx.Unlock()
+
+		if err != nil {
 			log.Println("Error writing to client:", err)
-			ws.clients.Delete(conn)
-			conn.Close()
+			ws.clients.Delete(client.conn)
+			client.conn.Close()
 		}
 
 		return true
@@ -120,8 +141,9 @@ func (ws *WebSocket) meterClients() db.Meter {
 	meter := db.Meter{}
 
 	ws.clients.Range(func(_, value interface{}) bool {
-		if status, ok := value.(Status); ok {
-			switch status {
+		client, ok := value.(*Client)
+		if ok {
+			switch client.status {
 			case Increment:
 				meter.Increment++
 			case Decrement:
