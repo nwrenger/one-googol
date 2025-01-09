@@ -14,7 +14,6 @@ use futures::{SinkExt, StreamExt};
 use num_bigint::BigInt;
 use num_traits::Signed;
 use num_traits::Zero;
-use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs,
@@ -31,7 +30,7 @@ use tower::ServiceExt;
 use tower_http::services::{ServeDir, ServeFile};
 
 /// Module name
-const MODULE: &str = "one-googol";
+pub const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 
 /// Path to 10^100 as a string
 const ONE_GOOGOL: &str = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
@@ -40,8 +39,8 @@ const ONE_GOOGOL: &str = "100000000000000000000000000000000000000000000000000000
 const UPDATE_PERIOD_MS: u64 = 250;
 
 /// Command-line arguments structure using Clap
-#[derive(Parser, Debug)]
-#[command(name = MODULE)]
+#[derive(Parser)]
+#[command(name = PKG_NAME)]
 struct Args {
     /// Host in the format ip:port
     host: String,
@@ -70,7 +69,7 @@ struct Args {
 }
 
 /// Meter structure to keep track of client states
-#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 struct Meter {
     increment: i64,
     decrement: i64,
