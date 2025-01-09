@@ -1,2 +1,13 @@
+# os
 .DS_Store
+
+# build
 build/
+/target
+Cargo.lock
+
+# data
+data/db.txt
+data/websockets.js
+/data/cert/*
+!/data/cert/gen.sh
