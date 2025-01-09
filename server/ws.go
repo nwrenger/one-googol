@@ -10,36 +10,47 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Send data updates to peer with this period.
+const updatePeriod = 250 * time.Millisecond
+
 // Upgrades HTTP connections to WebSocket connections.
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:    1024,
 	WriteBufferSize:   1024,
 	EnableCompression: false,
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+		allowedOrigins := []string{
+			"https://one-googol.nwrenger.dev",
+			"http://localhost:8080", // dev
+		}
+		origin := r.Header.Get("Origin")
+		for _, o := range allowedOrigins {
+			if origin == o {
+				return true
+			}
+		}
+		return false
 	},
 }
 
-// Send data updates to peer with this period.
-const updatePeriod = 250 * time.Millisecond
-
+// Represents a WebSocket connection and its state.
 type WebSocket struct {
 	clients  sync.Map // map[*websocket.Conn]*Client
 	database *Database
 }
 
-// Represents a WebSocket connection and its state.
+// Manages client connection and state.
 type Client struct {
-	conn   *websocket.Conn
-	status Status
-	mx     sync.RWMutex
+	conn  *websocket.Conn
+	state State
+	mx    sync.RWMutex
 }
 
 // Client's state.
-type Status int
+type State int
 
 const (
-	Disconnected Status = iota
+	Disconnected State = iota
 	Pending
 	Increment
 	Decrement
@@ -62,8 +73,8 @@ func (ws *WebSocket) WsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Init client
 	client := &Client{
-		conn:   conn,
-		status: Pending,
+		conn:  conn,
+		state: Pending,
 	}
 	ws.clients.Store(conn, client)
 	ws.sendCount(client)
@@ -92,11 +103,11 @@ func (ws *WebSocket) WsHandler(w http.ResponseWriter, r *http.Request) {
 		switch command {
 		case "increment":
 			client.mx.Lock()
-			client.status = Increment
+			client.state = Increment
 			client.mx.Unlock()
 		case "decrement":
 			client.mx.Lock()
-			client.status = Decrement
+			client.state = Decrement
 			client.mx.Unlock()
 		default:
 			log.Printf("Unknown command: %s", command)
@@ -143,7 +154,7 @@ func (ws *WebSocket) broadcast(message string) {
 	})
 }
 
-// Counts the number of clients in each status.
+// Counts the number of clients in each state.
 func (ws *WebSocket) meterClients() Meter {
 	meter := Meter{}
 
@@ -151,7 +162,7 @@ func (ws *WebSocket) meterClients() Meter {
 		client, ok := value.(*Client)
 		client.mx.RLock()
 		if ok {
-			switch client.status {
+			switch client.state {
 			case Pending:
 				meter.Pending++
 			case Increment:
