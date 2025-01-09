@@ -9,14 +9,14 @@ use axum::{
     routing::get,
     Extension, Router,
 };
+use axum_server::{tls_rustls::RustlsConfig, Handle};
 use clap::Parser;
 use futures::{SinkExt, StreamExt};
 use num_bigint::BigInt;
 use num_traits::Signed;
 use num_traits::Zero;
-use std::{collections::HashMap, fs, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, fs, net::ToSocketAddrs, path::PathBuf, sync::Arc};
 use tokio::{
-    net::TcpListener,
     signal,
     sync::{
         broadcast::{self, Sender},
@@ -115,25 +115,17 @@ impl Database {
     fn update_counter(&mut self, meter: &Meter) {
         let cmp_step = compute_step(&self.count);
 
-        // Compute stepIncrement = meter.increment ^ cmp_step
         let step_increment = BigInt::from(meter.increment).pow(cmp_step);
 
-        // Add stepIncrement to the count
         self.count += step_increment;
-
-        // Ensure count does not exceed 10^100
         let one_googol = BigInt::parse_bytes(ONE_GOOGOL.as_bytes(), 10).unwrap();
         if self.count > one_googol {
             self.count = one_googol.clone();
         }
 
-        // Compute stepDecrement = meter.decrement ^ cmp_step
         let step_decrement = BigInt::from(meter.decrement).pow(cmp_step);
 
-        // Subtract stepDecrement from the count
         self.count -= step_decrement;
-
-        // Ensure count does not go below zero
         if self.count < BigInt::zero() {
             self.count = BigInt::zero();
         }
@@ -259,24 +251,34 @@ async fn main() {
         args.host, args.view, args.db
     );
 
-    let listener = TcpListener::bind(&args.host).await.unwrap();
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .unwrap();
+    let handle = axum_server::Handle::new();
+    shutdown_signal(handle.clone()).await;
+
+    axum_server::bind_rustls(
+        args.host.to_socket_addrs().unwrap().next().unwrap(),
+        RustlsConfig::from_pem_file(&args.cert, &args.key)
+            .await
+            .unwrap(),
+    )
+    .handle(handle)
+    .serve(app.into_make_service())
+    .await
+    .unwrap();
 
     let db = app_state.database.read().await;
     if let Err(e) = db.save_to_file(&args.db) {
         eprintln!("\nError saving count to file: {}", e);
     } else {
-        println!("\nCount saved successfully to {}", args.db);
+        println!("\nCount saved successfully to {}", &args.db);
     }
 }
 
-async fn shutdown_signal() {
+async fn shutdown_signal(handle: Handle) {
     signal::ctrl_c()
         .await
-        .expect("Failed to install Ctrl+C handler");
+        .expect("failed to install Ctrl+C handler");
+
+    handle.graceful_shutdown(Some(Duration::from_secs(10)));
 }
 
 /// WebSocket handler for the `/ws` route
