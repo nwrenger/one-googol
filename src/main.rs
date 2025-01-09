@@ -14,16 +14,14 @@ use futures::{SinkExt, StreamExt};
 use num_bigint::BigInt;
 use num_traits::Signed;
 use num_traits::Zero;
-use std::{
-    collections::HashMap,
-    fs,
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, fs, path::PathBuf, sync::Arc};
 use tokio::{
     net::TcpListener,
     signal,
-    sync::broadcast::{self, Sender},
+    sync::{
+        broadcast::{self, Sender},
+        RwLock,
+    },
     time::{self, Duration},
 };
 use tower::ServiceExt;
@@ -156,10 +154,10 @@ fn compute_step(counter: &BigInt) -> u32 {
 
 /// Shared application state
 struct AppState {
-    database: Mutex<Database>,
-    clients: Mutex<HashMap<usize, Client>>,
+    database: RwLock<Database>,
+    clients: RwLock<HashMap<usize, Client>>,
     sender: Sender<String>,
-    next_client_id: Mutex<usize>,
+    next_client_id: RwLock<usize>,
 }
 
 /// Client structure representing a connected WebSocket client
@@ -212,10 +210,10 @@ async fn main() {
     let (sender, _) = broadcast::channel(100);
 
     let app_state = Arc::new(AppState {
-        database: Mutex::new(db),
-        clients: Mutex::new(HashMap::new()),
+        database: RwLock::new(db),
+        clients: RwLock::new(HashMap::new()),
         sender,
-        next_client_id: Mutex::new(1),
+        next_client_id: RwLock::new(1),
     });
 
     let updater_state = app_state.clone();
@@ -225,7 +223,7 @@ async fn main() {
             interval.tick().await;
 
             let client_states = {
-                let clients = updater_state.clients.lock().unwrap();
+                let clients = updater_state.clients.read().await;
                 clients
                     .values()
                     .map(|client| client.state.clone())
@@ -241,7 +239,7 @@ async fn main() {
                 }
             }
 
-            let mut db = updater_state.database.lock().unwrap();
+            let mut db = updater_state.database.write().await;
             db.update_counter(&total_meter);
             let new_count = db.get_string();
 
@@ -271,7 +269,7 @@ async fn main() {
         .await
         .unwrap();
 
-    let db = app_state.database.lock().unwrap();
+    let db = app_state.database.read().await;
     if let Err(e) = db.save_to_file(&args.db) {
         eprintln!("\nError saving count to file: {}", e);
     } else {
@@ -300,14 +298,14 @@ async fn handle_socket(stream: WebSocket, state: Arc<AppState>) {
     let mut rx = state.sender.subscribe();
 
     let client_id = {
-        let mut id_lock = state.next_client_id.lock().unwrap();
+        let mut id_lock = state.next_client_id.write().await;
         let id = *id_lock;
         *id_lock += 1;
         id
     };
 
     {
-        let mut clients = state.clients.lock().unwrap();
+        let mut clients = state.clients.write().await;
         clients.insert(
             client_id,
             Client {
@@ -329,13 +327,13 @@ async fn handle_socket(stream: WebSocket, state: Arc<AppState>) {
             // Handle client commands
             match text.as_str() {
                 "increment" => {
-                    let mut clients = state.clients.lock().unwrap();
+                    let mut clients = state.clients.write().await;
                     if let Some(client) = clients.get_mut(&client_id) {
                         client.state = ClientState::Increment;
                     }
                 }
                 "decrement" => {
-                    let mut clients = state.clients.lock().unwrap();
+                    let mut clients = state.clients.write().await;
                     if let Some(client) = clients.get_mut(&client_id) {
                         client.state = ClientState::Decrement;
                     }
@@ -350,7 +348,7 @@ async fn handle_socket(stream: WebSocket, state: Arc<AppState>) {
     }
 
     {
-        let mut clients = state.clients.lock().unwrap();
+        let mut clients = state.clients.write().await;
         clients.remove(&client_id);
     }
 
