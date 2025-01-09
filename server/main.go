@@ -12,8 +12,6 @@ import (
 	"syscall"
 
 	"github.com/gorilla/mux"
-	"github.com/nwrenger/one-googol/db"
-	"github.com/nwrenger/one-googol/ws"
 )
 
 const module string = "one-googol"
@@ -98,7 +96,7 @@ func main() {
 	router := mux.NewRouter()
 
 	// Setup Database
-	database := db.Database{}
+	database := Database{}
 	database.LoadCountFromFile(args.db)
 
 	// Setup graceful shutdown and count saving
@@ -117,9 +115,8 @@ func main() {
 	}()
 
 	// Setup WebSocket routes
-	webSocket := ws.WebSocket{}
-	router.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { webSocket.WsHandler(&database, w, r) })
-	go webSocket.Updater(&database)
+	webSocket := NewWebSocket(&database)
+	router.HandleFunc("/ws", webSocket.WsHandler)
 
 	// Setup File Server
 	router.PathPrefix("/").Handler(http.FileServer(BetterFS{

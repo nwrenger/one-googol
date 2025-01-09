@@ -1,4 +1,4 @@
-package ws
+package main
 
 import (
 	"fmt"
@@ -8,18 +8,31 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/nwrenger/one-googol/db"
 )
 
+// Upgrades HTTP connections to WebSocket connections.
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:    1024,
+	WriteBufferSize:   1024,
+	EnableCompression: false,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+// Send data updates to peer with this period.
+const updatePeriod = 250 * time.Millisecond
+
 type WebSocket struct {
-	clients sync.Map // map[*websocket.Conn]*Client
+	clients  sync.Map // map[*websocket.Conn]*Client
+	database *Database
 }
 
 // Represents a WebSocket connection and its state.
 type Client struct {
 	conn   *websocket.Conn
 	status Status
-	mx     sync.Mutex
+	mx     sync.RWMutex
 }
 
 // Client's state.
@@ -32,44 +45,36 @@ const (
 	Decrement
 )
 
-// Upgrades HTTP connections to WebSocket connections.
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
+// Creates a new websocket and runs an Updater in Background
+func NewWebSocket(database *Database) *WebSocket {
+	websocket := WebSocket{database: database}
+	go websocket.Updater()
+	return &websocket
 }
 
 // Upgrades the HTTP connection to a WebSocket and handles the connection.
-func (ws *WebSocket) WsHandler(database *db.Database, w http.ResponseWriter, r *http.Request) {
+func (ws *WebSocket) WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("WebSocket Upgrade error:", err)
 		return
 	}
 
+	// Init client
 	client := &Client{
 		conn:   conn,
 		status: Pending,
 	}
 	ws.clients.Store(conn, client)
-	ws.sendCount(client, database)
+	ws.sendCount(client)
 
-	go ws.handleConnection(client)
-}
-
-// Manages the WebSocket connection lifecycle.
-func (ws *WebSocket) handleConnection(client *Client) {
+	// Close everything on quit
 	defer func() {
 		ws.clients.Delete(client.conn)
 		client.conn.Close()
 	}()
 
-	// Set read deadlines and handle ping/pong to keep the connection alive.
-	client.conn.SetReadLimit(512)
-	client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-	client.conn.SetPongHandler(func(string) error {
-		client.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
-
+	// Messages loop
 	for {
 		messageType, msg, err := client.conn.ReadMessage()
 		if err != nil {
@@ -86,9 +91,13 @@ func (ws *WebSocket) handleConnection(client *Client) {
 		command := string(msg)
 		switch command {
 		case "increment":
+			client.mx.Lock()
 			client.status = Increment
+			client.mx.Unlock()
 		case "decrement":
+			client.mx.Lock()
 			client.status = Decrement
+			client.mx.Unlock()
 		default:
 			log.Printf("Unknown command: %s", command)
 		}
@@ -96,17 +105,15 @@ func (ws *WebSocket) handleConnection(client *Client) {
 }
 
 // Sends the current count and client metrics to a specific client.
-func (ws *WebSocket) sendCount(client *Client, database *db.Database) {
-	currentCount := database.GetString()
+func (ws *WebSocket) sendCount(client *Client) {
+	currentCount := ws.database.GetString()
 	meter := ws.meterClients()
 	message := fmt.Sprintf("%s,%d,%d", currentCount, meter.Increment, meter.Decrement)
 
-	// Messages need to be synchronously written to the websocket
 	client.mx.Lock()
-	err := client.conn.WriteMessage(websocket.TextMessage, []byte(message))
-	client.mx.Unlock()
+	defer client.mx.Unlock()
 
-	if err != nil {
+	if err := client.conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
 		log.Println("Error sending initial count:", err)
 		ws.clients.Delete(client.conn)
 		client.conn.Close()
@@ -137,38 +144,43 @@ func (ws *WebSocket) broadcast(message string) {
 }
 
 // Counts the number of clients in each status.
-func (ws *WebSocket) meterClients() db.Meter {
-	meter := db.Meter{}
+func (ws *WebSocket) meterClients() Meter {
+	meter := Meter{}
 
 	ws.clients.Range(func(_, value interface{}) bool {
 		client, ok := value.(*Client)
+		client.mx.RLock()
 		if ok {
 			switch client.status {
+			case Pending:
+				meter.Pending++
 			case Increment:
 				meter.Increment++
 			case Decrement:
 				meter.Decrement++
 			}
 		}
+		client.mx.RUnlock()
 		return true
 	})
 
 	return meter
 }
 
-// Periodically updates the counter and broadcasts changes.
-func (ws *WebSocket) Updater(database *db.Database) {
+// Periodically updates the counter and broadcasts changes to peer.
+func (ws *WebSocket) Updater() {
 	var lastCount string
-	ticker := time.NewTicker(250 * time.Millisecond)
+	var lastMeter Meter
+	ticker := time.NewTicker(updatePeriod)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		meter := ws.meterClients()
-		database.UpdateCounter(meter)
-		newCount := database.GetString()
+		newMeter := ws.meterClients()
+		ws.database.UpdateCounter(newMeter)
+		newCount := ws.database.GetString()
 
-		if newCount != lastCount {
-			message := fmt.Sprintf("%s,%d,%d", newCount, meter.Increment, meter.Decrement)
+		if newCount != lastCount || lastMeter != newMeter {
+			message := fmt.Sprintf("%s,%d,%d", newCount, newMeter.Increment, newMeter.Decrement)
 			ws.broadcast(message)
 			lastCount = newCount
 		}

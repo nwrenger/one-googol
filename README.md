@@ -71,3 +71,7 @@ cp -r view/build build/view
 ./one-googol localhost:8080 --view ./public --db ./data/counter.txt --cert ./cert/cert.pem --key ./cert/key.pem
 ```
 _Starts the server on localhost at port 8080, serves the frontend from ./public, uses ./data/counter.txt for data persistence, and the ./cert directory for tls configuration._
+
+## Todo
+
+- Add increase timer vote system (base, exponent, etc. like kind)

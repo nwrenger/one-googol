@@ -12,7 +12,6 @@
 	let counter = $state('0');
 	let counter_splitted = $derived(counter.padStart(GOOGOL_LENGTH, '0').split(''));
 	let clients = $state(['0', '0']);
-	let step = $derived(calculateStepLevel(counter));
 	let socket = connect();
 	let connected = $state(false);
 	let tooltipOpen = $state(false);
@@ -43,11 +42,6 @@
 		if (connected && increaseType != '') {
 			socket.send(increaseType);
 		}
-	}
-
-	function calculateStepLevel(counterStr: string): number {
-		const digits = counterStr.length;
-		return Math.floor((digits - 1) / 3);
 	}
 </script>
 
@@ -90,8 +84,8 @@
 	{/if}
 
 	<div class="mx-auto flex w-full max-w-screen-xl flex-wrap justify-center gap-2">
-		{#each counter_splitted as digit, i}
-			<DigitScroller {digit} finished={step * 2 > Math.abs(i - 100) || counter === GOOGOL} />
+		{#each counter_splitted as digit}
+			<DigitScroller {digit} finished={counter === GOOGOL} />
 		{/each}
 	</div>
 
@@ -134,7 +128,7 @@
 				positioning={{ placement: 'top' }}
 				base="flex items-center"
 				contentBase="card preset-filled-error-500 p-4"
-				openDelay={200}
+				openDelay={0}
 				closeOnClick={false}
 				closeOnPointerDown={false}
 				onclick={() => {
@@ -159,8 +153,4 @@
 			</Tooltip>
 		{/if}
 	</div>
-	<p class="{counter === GOOGOL ? 'opacity-40' : ''} flex items-center space-x-2">
-		<span> Step Level: </span>
-		<code class="code">{step}</code>
-	</p>
 </div>
