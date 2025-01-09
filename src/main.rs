@@ -27,13 +27,8 @@ use tokio::{
 use tower::ServiceExt;
 use tower_http::services::{ServeDir, ServeFile};
 
-/// Module name
-pub const PKG_NAME: &str = env!("CARGO_PKG_NAME");
-
-/// Path to 10^100 as a string
+const PKG_NAME: &str = env!("CARGO_PKG_NAME");
 const ONE_GOOGOL: &str = "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-
-/// Update period for broadcasting messages (in milliseconds)
 const UPDATE_PERIOD_MS: u64 = 250;
 
 /// Command-line arguments structure using Clap
@@ -66,7 +61,7 @@ struct Args {
     key: String,
 }
 
-/// Meter structure to keep track of client states
+/// Client state count
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 struct Meter {
     increment: i64,
@@ -74,7 +69,7 @@ struct Meter {
     pending: i64,
 }
 
-/// Database structure managing the big integer counter
+/// Manages counter and should be accessible via state.
 #[derive(Debug)]
 struct Database {
     count: BigInt,
@@ -160,11 +155,12 @@ struct AppState {
     next_client_id: RwLock<usize>,
 }
 
-/// Client structure representing a connected WebSocket client
+/// Represents a connected WebSocket client
 struct Client {
     state: ClientState,
 }
 
+/// Client state
 #[derive(Default, Clone)]
 enum ClientState {
     #[default]
@@ -324,7 +320,6 @@ async fn handle_socket(stream: WebSocket, state: Arc<AppState>) {
 
     while let Some(Ok(message)) = receiver.next().await {
         if let Message::Text(text) = message {
-            // Handle client commands
             match text.as_str() {
                 "increment" => {
                     let mut clients = state.clients.write().await;
