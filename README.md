@@ -57,4 +57,4 @@ _Starts the server on localhost at port 8080, serves the frontend from ./public,
 
 ## Todo
 
-- Add increase timer vote system (base, exponent, etc. like kind)
+- Add increase timer vote system (base, exponent, etc. like kind or smth)

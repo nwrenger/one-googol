@@ -9,7 +9,7 @@ use axum::{
     routing::get,
     Extension, Router,
 };
-use axum_server::{tls_rustls::RustlsConfig, Handle};
+use axum_server::tls_rustls::RustlsConfig;
 use clap::Parser;
 use futures::{SinkExt, StreamExt};
 use num_bigint::BigInt;
@@ -170,15 +170,8 @@ async fn main() {
         std::process::exit(1);
     }
 
-    let db_dir = PathBuf::from(&args.db)
-        .parent()
-        .map(|p| p.to_path_buf())
-        .unwrap_or_else(|| PathBuf::from("."));
-    if !db_dir.exists() {
-        eprintln!(
-            "The directory for the Database '{}' does not exist!",
-            db_dir.display()
-        );
+    if !PathBuf::from(&args.db).exists() {
+        eprintln!("The path for the Database '{}' is invalid!", args.view);
         std::process::exit(1);
     }
 
@@ -252,18 +245,22 @@ async fn main() {
     );
 
     let handle = axum_server::Handle::new();
-    shutdown_signal(handle.clone()).await;
+    let shut = shutdown_signal();
 
-    axum_server::bind_rustls(
-        args.host.to_socket_addrs().unwrap().next().unwrap(),
-        RustlsConfig::from_pem_file(&args.cert, &args.key)
-            .await
-            .unwrap(),
-    )
-    .handle(handle)
-    .serve(app.into_make_service())
-    .await
-    .unwrap();
+    let addr = args.host.to_socket_addrs().unwrap().next().unwrap();
+    let tls = RustlsConfig::from_pem_file(&args.cert, &args.key)
+        .await
+        .unwrap();
+
+    let server = axum_server::bind_rustls(addr, tls)
+        .handle(handle.clone())
+        .serve(app.into_make_service());
+
+    tokio::select! {
+        () = shut =>
+            handle.graceful_shutdown(Some(Duration::from_secs(10))),
+        res = server => res.unwrap(),
+    }
 
     let db = app_state.database.read().await;
     if let Err(e) = db.save_to_file(&args.db) {
@@ -273,12 +270,10 @@ async fn main() {
     }
 }
 
-async fn shutdown_signal(handle: Handle) {
+async fn shutdown_signal() {
     signal::ctrl_c()
         .await
         .expect("failed to install Ctrl+C handler");
-
-    handle.graceful_shutdown(Some(Duration::from_secs(10)));
 }
 
 /// WebSocket handler for the `/ws` route
