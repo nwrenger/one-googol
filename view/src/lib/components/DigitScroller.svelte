@@ -1,13 +1,13 @@
 <script lang="ts">
 	interface Props {
 		digit: string;
-		finished: boolean;
+		disabled: boolean;
 		background?: string;
 	}
 
 	let {
 		digit = '0',
-		finished = false,
+		disabled = false,
 		background = 'border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50'
 	}: Props = $props();
 	let digitIndex = $derived(parseInt(digit, 10) || 0);
@@ -18,7 +18,7 @@
 </script>
 
 <div
-	class="card {finished
+	class="card {disabled
 		? 'opacity-40'
 		: ''} relative flex h-10 w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-sm transition-transform duration-300 {background}"
 >

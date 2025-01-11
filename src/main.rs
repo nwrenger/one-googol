@@ -64,9 +64,9 @@ struct Args {
 /// Client state count
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 struct Meter {
-    increment: i64,
-    decrement: i64,
-    pending: i64,
+    increment: u32,
+    decrement: u32,
+    pending: u32,
 }
 
 /// Manages counter and should be accessible via state.
@@ -125,9 +125,11 @@ impl Database {
 
         let step_decrement = BigInt::from(meter.decrement).pow(cmp_step);
 
-        self.count -= step_decrement;
-        if self.count < BigInt::zero() {
-            self.count = BigInt::zero();
+        if self.count != one_googol {
+            self.count -= step_decrement.clone();
+            if self.count < BigInt::zero() {
+                self.count = BigInt::zero();
+            }
         }
     }
 }
@@ -271,9 +273,7 @@ async fn main() {
 }
 
 async fn shutdown_signal() {
-    signal::ctrl_c()
-        .await
-        .expect("failed to install Ctrl+C handler");
+    signal::ctrl_c().await.expect("Failed to listen for Ctrl+C");
 }
 
 /// WebSocket handler for the `/ws` route

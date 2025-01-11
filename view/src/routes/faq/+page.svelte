@@ -28,17 +28,11 @@
 	<section class="space-y-6">
 		<h4 class="h4">How does the scaling work?</h4>
 		<p>
-			Because a googol is a massive number, I've implement automatic scaling. It works by
-			calculating first a Step Level, where the number of digits are grouped into sets of three
-			using this formula:
+			Since a googol is an enormous number, I've implemented automatic scaling. It works by raising
+			the number of players to the power of the square root of the total counter length:
 		</p>
-		<pre class="pre">Step Level = floor((digits - 1) / 3)</pre>
-		<p>And then this Step Level is used to determine the Step Size:</p>
-		<pre class="pre">Step Size = 100<sup>Step Level</sup></pre>
-		<p>
-			On each increase and decrease the Step Size is used. It's also visible on the counter itself,
-			by the inactive and grayed out digits.
-		</p>
+		<pre class="pre">step = player_count<sup>√counter_length</sup></pre>
+		<p>This value is added to the counter every 250 ms.</p>
 	</section>
 
 	<section class="space-y-6">
