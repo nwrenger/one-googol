@@ -9,6 +9,7 @@
 	}
 
 	let { background, increase, counter }: Props = $props();
+	let open = $state(false);
 
 	let absIncrease = $derived(Math.abs(increase));
 	let exponent = $derived(Math.sqrt(counter.count.value.length + counter.upgrade.exponent));
@@ -21,6 +22,7 @@
 </script>
 
 <Tooltip
+	bind:open
 	positioning={{ placement: 'top' }}
 	triggerBase="card {background} relative flex h-10 w-fit min-w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-sm"
 	contentBase="card {background} border-[1px] shadow-sm p-4 max-w-[calc(100vw-30px)] text-center"
@@ -28,6 +30,7 @@
 	closeDelay={50}
 	closeOnClick={false}
 	closeOnPointerDown={false}
+	onclick={() => (open = !open)}
 >
 	{#snippet trigger()}
 		{absIncrease}
