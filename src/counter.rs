@@ -176,7 +176,7 @@ impl Poll {
         if self.time_remaining == 0 {
             return true;
         }
-        if self.meter.base > 0 || self.meter.exponent > 0 {
+        if self.meter.base != self.meter.exponent {
             self.time_remaining -= 1;
         }
         false

@@ -26,9 +26,9 @@
 			by utilizing a WebSocket connection to the server.
 		</p>
 		<p>
-			The poll time, consisting of 5 Minutes, will only countdown if any option is at least voted
-			once. Closing the counter view will close the WebSocket connection and, therefore, also remove
-			your vote and counter selection!
+			The 5-minute poll countdown will only begin if at least one option has more votes than the
+			others. Closing the counter view will close the WebSocket connection and, therefore, also
+			remove your vote and counter selection!
 		</p>
 	</section>
 
