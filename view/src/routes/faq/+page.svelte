@@ -19,9 +19,16 @@
 		<p>
 			On the <a href="/" class="anchor">main page</a> you'll find the counter, an
 			<span class="text-primary-500">increment</span>
-			and <span class="text-tertiary-500">decrement</span> selector and on each side of this selector
-			are the counts of other clients. This will be shown to you in real-time (refreshed every 250ms)
+			and <span class="text-tertiary-500">decrement</span> selector, on each side of this selector
+			are the counts of other clients and under that an
+			<span class="text-secondary-500">Upgrades/Upgrade Poll</span> Button which opens a modal with upgrade
+			info. The counter and poll counter/results will be shown to you in real-time (refreshed every 250ms)
 			by utilizing a WebSocket connection to the server.
+		</p>
+		<p>
+			The poll time, consisting of 5 Minutes, will only countdown if any option is at least voted
+			once. Closing the counter view will close the WebSocket connection and, therefore, also remove
+			your vote and counter selection!
 		</p>
 	</section>
 
@@ -29,10 +36,17 @@
 		<h4 class="h4">How does the scaling work?</h4>
 		<p>
 			Since a googol is an enormous number, I've implemented automatic scaling. It works by raising
-			the number of players to the power of the square root of the total counter length:
+			the number of players to the power of the square root of the total counter length, with
+			additional factors that players can vote on when they reach the <span
+				class="text-secondary-500">violet-colored number cards</span
+			>. Concretely:
 		</p>
-		<pre class="pre">step = player_count<sup>√counter_length</sup></pre>
-		<p>This value is added to the counter every 250 ms.</p>
+		<pre class="pre">step = player_count * base_factor<sup>√(counter_length + exponent_factor)</sup
+			></pre>
+		<p>
+			This <strong>step</strong> value is added to the counter every 250 ms. When you hover over the
+			player count cards, you can see the currently calculated step.
+		</p>
 	</section>
 
 	<section class="space-y-6">

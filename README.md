@@ -4,14 +4,14 @@ This is a collaborative project where you, the participants, work together to re
 
 ## Architecture
 
-- Backend: Located in the [server](server/) directory, built with Rust.
+- Backend: Located in the [root](/) directory, built with Rust.
 - Frontend: Located under the [view](view/) directory, built with Svelte.
 
 ### Backend
 
 The Rust-based backend manages the application's core logic, static file serving and real-time communication. These is established through a Websocket at `/ws`.
 
-It also saves the current count on save in the file provided by the `--db` arg.
+It also saves the current count on quit in the file provided by the `--counter` arg.
 
 ### Frontend
 
@@ -28,7 +28,7 @@ bun run build
 2. Run Server:
 ```sh
 ./data/cert/gen.sh
-cargo run -- localhost:8080 -d data/db.txt -v view/build --cert data/cert/cert.pem --key data/cert/key.pem
+cargo run -- localhost:8080 -c data/counter.json -v view/build --cert data/cert/cert.pem --key data/cert/key.pem
 ```
 
 ## Building
@@ -57,4 +57,9 @@ _Starts the server on localhost at port 8080, serves the frontend from ./public,
 
 ## Todo
 
-- Add increase timer vote system (base, exponent, etc. like kind or smth)
+- [ ] Add increase timer vote system (base, exponent, etc. like kind or smth)
+  - [ ] Reaching Count Values/Levels (10th length) -> Upgrades:
+    - [x] Vote on what gets upgraded (5 min time)
+    - [x] Exponent +1 (addition modifier)
+    - [x] Base/User +1 (multiply modifier)
+    - [ ] Add at Level 4: Clicking yourself +Clicking Multiplier (exponent + base), maybe: Auto Clickers (Upgrading them)

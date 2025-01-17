@@ -7,7 +7,7 @@ build/
 Cargo.lock
 
 # data
-data/db.txt
+data/counter.json
 data/websockets.js
 /data/cert/*
 !/data/cert/gen.sh

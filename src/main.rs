@@ -1,4 +1,4 @@
-pub mod db;
+pub mod counter;
 pub mod util;
 pub mod ws;
 
@@ -6,22 +6,20 @@ use axum::{
     body::Body,
     error_handling::HandleErrorLayer,
     extract::{Path, State},
-    http::{Request, StatusCode},
+    http::{HeaderValue, Request, StatusCode},
     response::IntoResponse,
     routing::{any, get},
     Router,
 };
 use axum_server::tls_rustls::RustlsConfig;
 use clap::Parser;
-use db::Database;
-use std::{collections::HashMap, net::ToSocketAddrs, path::PathBuf, sync::Arc};
-use tokio::{
-    sync::{broadcast, RwLock},
-    time::Duration,
-};
+use counter::Counter;
+use std::{net::TcpListener, path::PathBuf};
+use tokio::{sync::broadcast, time::Duration};
 use tower::{BoxError, ServiceBuilder, ServiceExt};
 use tower_http::{
     compression::CompressionLayer,
+    cors::{Any, CorsLayer},
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
@@ -37,25 +35,25 @@ struct Args {
 
     /// Path to the view folder
     #[arg(short, default_value = "view")]
-    view: String,
+    view: PathBuf,
 
-    /// Path to the database file
-    #[arg(short, default_value = "db.txt")]
-    db: String,
+    /// Path to the persistent counter file
+    #[arg(short, default_value = "counter.json")]
+    counter: PathBuf,
 
     /// Path to the SSL certificate
     #[arg(
         long,
         default_value = "/etc/letsencrypt/live/one-googol.nwrenger.dev/fullchain.pem"
     )]
-    cert: String,
+    cert: PathBuf,
 
     /// Path to the SSL private key
     #[arg(
         long,
         default_value = "/etc/letsencrypt/live/one-googol.nwrenger.dev/privkey.pem"
     )]
-    key: String,
+    key: PathBuf,
 }
 
 #[tokio::main]
@@ -65,36 +63,26 @@ async fn main() {
     let args = Args::parse();
 
     if !PathBuf::from(&args.view).exists() {
-        error!("The path for view content '{}' is invalid!", args.view);
-        std::process::exit(1);
-    }
-
-    if !PathBuf::from(&args.db).exists() {
-        error!("The path for the Database '{}' is invalid!", args.view);
+        error!("The path for view content {:?} is invalid!", args.view);
         std::process::exit(1);
     }
 
     if !PathBuf::from(&args.cert).exists() {
-        error!("The SSL certificate path '{}' does not exist!", args.cert);
+        error!("The SSL certificate path {:?} does not exist!", args.cert);
         std::process::exit(1);
     }
 
     if !PathBuf::from(&args.key).exists() {
-        error!("The SSL key path '{}' does not exist!", args.key);
+        error!("The SSL key path {:?} does not exist!", args.key);
         std::process::exit(1);
     }
 
-    let mut db = Database::new();
-    db.load_from_file(&args.db);
+    let mut counter = Counter::new();
+    counter.load_from_file(&args.counter);
 
     let (sender, _) = broadcast::channel(100);
 
-    let ws_state = Arc::new(WebSocketState {
-        database: RwLock::new(db),
-        clients: RwLock::new(HashMap::new()),
-        sender,
-        next_client_id: RwLock::new(1),
-    });
+    let ws_state = WebSocketState::new(counter, sender);
 
     spawn_updater(ws_state.clone());
 
@@ -107,6 +95,11 @@ async fn main() {
         )
         .layer(
             ServiceBuilder::new()
+                .layer(
+                    CorsLayer::new()
+                        .allow_origin(args.host.parse::<HeaderValue>().unwrap())
+                        .allow_methods(Any),
+                )
                 .layer(CompressionLayer::new())
                 .layer(HandleErrorLayer::new(|error: BoxError| async move {
                     if error.is::<tower::timeout::error::Elapsed>() {
@@ -121,20 +114,17 @@ async fn main() {
                 .into_inner(),
         );
 
-    info!(
-        "Server started on '{}' with frontend at '{}' and Database at '{}'",
-        args.host, args.view, args.db
-    );
-
     let handle = axum_server::Handle::new();
     let shut = util::shutdown_signal();
 
-    let addr = args.host.to_socket_addrs().unwrap().next().unwrap();
+    let tcp = TcpListener::bind(&args.host).unwrap();
     let tls = RustlsConfig::from_pem_file(&args.cert, &args.key)
         .await
         .unwrap();
 
-    let server = axum_server::bind_rustls(addr, tls)
+    info!("Server started on \"{}\"", args.host);
+
+    let server = axum_server::from_tcp_rustls(tcp, tls)
         .handle(handle.clone())
         .serve(app.into_make_service());
 
@@ -144,11 +134,14 @@ async fn main() {
         res = server => res.unwrap(),
     }
 
-    let db = ws_state.database.read().await;
-    if let Err(e) = db.save_to_file(&args.db) {
-        error!("Error saving count '{}' to file: {}", db.count, e);
+    let counter = ws_state.counter.read().await;
+    if let Err(e) = counter.save_to_file(&args.counter) {
+        error!("Error saving \"{:?}\" to file: {}", counter, e);
     } else {
-        info!("Count '{}' saved successfully to {}", db.count, &args.db);
+        info!(
+            "\"{:?}\" saved successfully to {:?}",
+            counter, &args.counter
+        );
     }
 }
 

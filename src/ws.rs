@@ -1,5 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
-
+use crate::{
+    counter::{CountMeter, Counter, PollMeter},
+    util,
+};
 use axum::{
     extract::{
         ws::{Message, WebSocket},
@@ -8,77 +10,116 @@ use axum::{
     response::IntoResponse,
 };
 use futures::{SinkExt, StreamExt};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, sync::Arc};
 use tokio::{
     sync::{broadcast::Sender, RwLock},
     time::{self, Duration},
 };
 
-use crate::{db::Database, util};
-
 /// Websocket state
+#[derive(Debug)]
 pub struct WebSocketState {
-    pub database: RwLock<Database>,
+    pub counter: RwLock<Counter>,
     pub clients: RwLock<HashMap<usize, Client>>,
     pub sender: Sender<String>,
     pub next_client_id: RwLock<usize>,
 }
 
+impl WebSocketState {
+    pub fn new(counter: Counter, sender: Sender<String>) -> Arc<Self> {
+        Arc::new(Self {
+            counter: RwLock::new(counter),
+            clients: RwLock::new(HashMap::new()),
+            sender,
+            next_client_id: RwLock::new(1),
+        })
+    }
+}
+
 /// Represents a connected WebSocket client
 #[derive(Debug)]
 pub struct Client {
-    pub state: ClientState,
+    pub counter_state: CounterState,
+    pub poll_state: PollState,
 }
 
-/// Client state
+/// Client counter state
 #[derive(Default, Clone, Debug)]
-pub enum ClientState {
+pub enum CounterState {
     #[default]
     Pending = 0,
     Increment,
     Decrement,
 }
 
-/// Client state count
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub struct Meter {
-    pub increment: u32,
-    pub decrement: u32,
-    pub pending: u32,
+impl CounterState {
+    /// Counts clients states
+    pub fn meter_counter(counter_states: &[Self]) -> CountMeter {
+        let mut meter = CountMeter::default();
+        for client_state in counter_states {
+            match client_state {
+                Self::Pending => meter.pending += 1,
+                Self::Increment => meter.increment += 1,
+                Self::Decrement => meter.decrement += 1,
+            }
+        }
+        meter
+    }
 }
 
-/// Spawns an updater threads which updates the count and sends that to the clients via channel
-pub fn spawn_updater(ws_state: Arc<WebSocketState>) {
+/// Client poll state
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum PollState {
+    #[default]
+    Pending = 0,
+    Base,
+    Exponent,
+}
+
+impl PollState {
+    /// Counts clients states
+    pub fn meter_poll(poll_states: &[Self]) -> PollMeter {
+        let mut meter = PollMeter::default();
+        for poll_state in poll_states {
+            match poll_state {
+                Self::Pending => meter.pending += 1,
+                Self::Base => meter.base += 1,
+                Self::Exponent => meter.exponent += 1,
+            }
+        }
+        meter
+    }
+}
+
+/// Spawns an updater threads which updates the count and sends that to the clients via a channel
+pub fn spawn_updater(state: Arc<WebSocketState>) {
     tokio::spawn(async move {
         let mut interval = time::interval(Duration::from_millis(util::UPDATE_PERIOD_MS));
+        let mut before = Counter::default();
         loop {
             interval.tick().await;
 
-            let client_states = {
-                let clients = ws_state.clients.read().await;
+            let (counter_states, poll_states) = {
+                let clients = state.clients.read().await;
                 clients
                     .values()
-                    .map(|client| client.state.clone())
-                    .collect::<Vec<_>>()
+                    .map(|client| (client.counter_state.clone(), client.poll_state.clone()))
+                    .collect::<(Vec<_>, Vec<_>)>()
             };
 
-            let mut total_meter = Meter::default();
-            for client_state in client_states {
-                match client_state {
-                    ClientState::Pending => total_meter.pending += 1,
-                    ClientState::Increment => total_meter.increment += 1,
-                    ClientState::Decrement => total_meter.decrement += 1,
-                }
+            let mut counter = state.counter.write().await;
+
+            counter.update_poll(&poll_states);
+            counter.update_count(&counter_states);
+
+            if before != *counter {
+                let message = serde_json::to_string(&*counter).unwrap();
+                let _ = state.sender.send(message);
+                before = counter.clone();
             }
 
-            let mut db = ws_state.database.write().await;
-            db.update_counter(&total_meter);
-            let new_count = db.get_string();
-
-            let message = format!(
-                "{},{},{}",
-                &new_count, total_meter.increment, total_meter.decrement
-            );
-            let _ = ws_state.sender.send(message);
+            drop(counter);
         }
     });
 }
@@ -92,7 +133,7 @@ pub async fn ws_handler(
 }
 
 /// Handles an individual WebSocket connection
-pub async fn handle_socket(stream: WebSocket, state: Arc<WebSocketState>) {
+async fn handle_socket(stream: WebSocket, state: Arc<WebSocketState>) {
     let (mut sender, mut receiver) = stream.split();
 
     let mut rx = state.sender.subscribe();
@@ -108,7 +149,8 @@ pub async fn handle_socket(stream: WebSocket, state: Arc<WebSocketState>) {
     clients.insert(
         client_id,
         Client {
-            state: ClientState::default(),
+            counter_state: CounterState::default(),
+            poll_state: PollState::default(),
         },
     );
     drop(clients);
@@ -127,13 +169,26 @@ pub async fn handle_socket(stream: WebSocket, state: Arc<WebSocketState>) {
                 "increment" => {
                     let mut clients = state.clients.write().await;
                     if let Some(client) = clients.get_mut(&client_id) {
-                        client.state = ClientState::Increment;
+                        client.counter_state = CounterState::Increment;
                     }
                 }
                 "decrement" => {
                     let mut clients = state.clients.write().await;
                     if let Some(client) = clients.get_mut(&client_id) {
-                        client.state = ClientState::Decrement;
+                        client.counter_state = CounterState::Decrement;
+                    }
+                }
+                // todo generalize/add more options later
+                "base" => {
+                    let mut clients = state.clients.write().await;
+                    if let Some(client) = clients.get_mut(&client_id) {
+                        client.poll_state = PollState::Base;
+                    }
+                }
+                "exponent" => {
+                    let mut clients = state.clients.write().await;
+                    if let Some(client) = clients.get_mut(&client_id) {
+                        client.poll_state = PollState::Exponent;
                     }
                 }
                 _ => {
