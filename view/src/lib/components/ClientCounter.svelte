@@ -36,8 +36,8 @@
 		{absIncrease}
 	{/snippet}
 	{#snippet content()}
-		{increase} *
-		{counter.upgrade.base}<sup>√({counter.count.value.length} + {counter.upgrade.exponent})</sup>
+		({increase} *
+		{counter.upgrade.base})<sup>√({counter.count.value.length} + {counter.upgrade.exponent})</sup>
 		= {displayResult}
 	{/snippet}
 </Tooltip>

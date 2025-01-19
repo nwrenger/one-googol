@@ -41,7 +41,8 @@
 				class="text-secondary-500">violet-colored number cards</span
 			>. Concretely:
 		</p>
-		<pre class="pre">step = player_count * base_factor<sup>√(counter_length + exponent_factor)</sup
+		<pre class="pre">step = (player_count * base_factor)<sup
+				>√(counter_length + exponent_factor)</sup
 			></pre>
 		<p>
 			This <strong>step</strong> value is added to the counter every 250 ms. When you hover over the
