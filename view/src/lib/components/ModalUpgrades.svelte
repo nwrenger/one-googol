@@ -45,7 +45,7 @@
 		toast.create({
 			title: 'Poll Results',
 			description: `Voted for ${upgrade.last_upgrade}!`,
-			duration: 5_000
+			duration: 2_500
 		});
 	}
 </script>

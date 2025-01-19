@@ -114,13 +114,13 @@
 		// Because toast changes, I need to decouple from effect!
 		setTimeout(createConnecting, 0);
 		interval = setInterval(() => {
-			socket = connect();
 			createConnecting();
-		}, 5_000);
+			socket = connect();
+		}, 2_500);
 	}
 
 	function createConnecting() {
-		toast.create({ title: 'WebSocket', description: 'Connecting...', duration: 5_000 });
+		toast.create({ title: 'WebSocket', description: 'Connecting...', duration: 2_500 });
 	}
 
 	function createConnected() {
@@ -128,7 +128,7 @@
 			title: 'WebSocket',
 			description: 'Connected!',
 			type: 'success',
-			duration: 5_000
+			duration: 2_500
 		});
 	}
 
@@ -137,7 +137,7 @@
 			title: 'WebSocket',
 			description: 'Connection Closed!',
 			type: 'error',
-			duration: 5_000
+			duration: 2_500
 		});
 	}
 
