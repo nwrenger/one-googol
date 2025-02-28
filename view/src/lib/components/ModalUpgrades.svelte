@@ -51,10 +51,11 @@
 </script>
 
 <Modal
-	bind:open={openState}
-	triggerBase="{disabledClass} btn preset-tonal-secondary border-[1px] border-secondary-500 shadow-sm shadow-secondary-500"
-	contentBase="card preset-tonal-secondary border-[1px] border-secondary-500 p-4 space-y-4 shadow-xl max-w-screen-sm"
-	backdropClasses="backdrop-blur-sm"
+	open={openState}
+	onOpenChange={(e) => (openState = e.open)}
+	triggerBase="{disabledClass} btn preset-tonal-secondary border-[1px] border-secondary-500 shadow-xs shadow-secondary-500"
+	contentBase="card preset-tonal-secondary border-[1px] border-secondary-500 p-4 space-y-4 shadow-xl max-w-(--breakpoint-sm)"
+	backdropClasses="backdrop-blur-xs"
 >
 	{#snippet trigger()}
 		{#if poll}
