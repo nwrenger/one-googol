@@ -4,7 +4,9 @@
 </svelte:head>
 
 <div class="mx-auto max-w-3xl space-y-8 pt-10 pb-14">
-	<a href="/" class="anchor">← Back</a>
+	<section>
+		<a href="/" class="anchor">← Back</a>
+	</section>
 
 	<section class="space-y-6">
 		<h3 class="h3">Welcome to One Googol!</h3>
