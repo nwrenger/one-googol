@@ -3,7 +3,7 @@
 	<meta name="description" content="The FAQ of the One Googol Project!" />
 </svelte:head>
 
-<div class="mx-auto max-w-3xl space-y-8 pb-14 pt-10">
+<div class="mx-auto max-w-3xl space-y-8 pt-10 pb-14">
 	<a href="/" class="anchor">← Back</a>
 
 	<section class="space-y-6">

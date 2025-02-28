@@ -10,8 +10,9 @@
 		mode = localStorage.getItem('theme') === 'light';
 	});
 
-	function handleModeChange() {
-		localStorage.setItem('theme', mode ? 'dark' : 'light');
+	function handleModeChange(e: { checked: boolean }) {
+		mode = e.checked;
+		localStorage.setItem('theme', mode ? 'light' : 'dark');
 	}
 
 	$effect(() => {
@@ -20,13 +21,13 @@
 </script>
 
 <Switch
+	checked={mode}
+	onCheckedChange={handleModeChange}
 	name="mode"
 	compact
 	controlActive="bg-surface-none"
 	controlInactive="bg-surface-none"
 	controlPadding="p-1"
-	bind:checked={mode}
-	onCheckedChange={handleModeChange}
 >
 	{#snippet inactiveChild()}<IconMoon size="20" />{/snippet}
 	{#snippet activeChild()}<IconSun size="20" />{/snippet}

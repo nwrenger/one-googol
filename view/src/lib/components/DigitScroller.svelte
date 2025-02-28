@@ -16,10 +16,10 @@
 <div
 	class="card {disabled ? 'opacity-40' : ''} {highlighted
 		? 'border-secondary-500 shadow-secondary-500 preset-tonal-secondary'
-		: 'border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50'} relative flex h-10 w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-sm transition-transform duration-300"
+		: 'border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50'} relative flex h-10 w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-xs transition-transform duration-300"
 >
 	<div
-		class="absolute left-0 right-0 top-0 transition-transform duration-300"
+		class="absolute top-0 right-0 left-0 transition-transform duration-300"
 		style="transform: translateY(-{digitIndex * rowHeightRem}rem);"
 	>
 		{#each digits as d}

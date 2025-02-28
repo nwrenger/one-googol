@@ -156,7 +156,7 @@
 <div class="flex flex-col items-center justify-center space-y-6 p-4">
 	{#if googol_reached}
 		<div
-			class="pointer-events-none fixed left-0 top-[-50px] flex h-[100vh] w-[100vw] justify-center overflow-hidden"
+			class="pointer-events-none fixed top-[-50px] left-0 flex h-[100vh] w-[100vw] justify-center overflow-hidden"
 		>
 			<Confetti
 				x={[-5, 5]}
@@ -169,24 +169,24 @@
 			/>
 		</div>
 		<div class="relative">
-			<div class="absolute right-[10%] top-[40%]">
+			<div class="absolute top-[40%] right-[10%]">
 				<Confetti amount={200} infinite />
 			</div>
-			<div class="absolute right-[90%] top-[40%]">
+			<div class="absolute top-[40%] right-[90%]">
 				<Confetti amount={200} infinite />
 			</div>
 			<div
-				class="rounded-lg border-[1px] border-surface-950 p-8 text-center shadow-sm shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50"
+				class="border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50 rounded-lg border-[1px] p-8 text-center shadow-xs"
 			>
-				<h2 class="h3 mb-4 text-success-500 md:h2 md:text-success-500">
+				<h2 class="h3 text-success-500 md:h2 md:text-success-500 mb-4">
 					🎉 Congratu&shy;lations! 🎉
 				</h2>
-				<h5 class="h6 font-normal md:h5">You've reached One Googol!</h5>
+				<h5 class="h6 md:h5 font-normal">You've reached One Googol!</h5>
 			</div>
 		</div>
 	{/if}
 
-	<div class="mx-auto flex w-full max-w-screen-xl flex-wrap justify-center gap-2">
+	<div class="mx-auto flex w-full max-w-(--breakpoint-xl) flex-wrap justify-center gap-2">
 		{#each counter_splitted as digit, i}
 			<DigitScroller
 				{digit}
@@ -205,8 +205,9 @@
 
 		<Segment
 			name="increaseType"
-			background="{disabledClass} preset-outlined-surface-950-50 preset-tonal-surface shadow-sm shadow-surface-950 dark:shadow-surface-50"
-			bind:value={$increaseType}
+			background="{disabledClass} preset-outlined-surface-950-50 preset-tonal-surface shadow-xs shadow-surface-950 dark:shadow-surface-50"
+			value={$increaseType}
+			onValueChange={(e) => ($increaseType = e.value || '')}
 		>
 			<Segment.Item {disabled} value="increment">
 				<ArrowBigUp class="text-primary-500" />

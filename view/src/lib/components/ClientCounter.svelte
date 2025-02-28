@@ -22,10 +22,11 @@
 </script>
 
 <Tooltip
-	bind:open
+	{open}
+	onOpenChange={(e) => (open = e.open)}
 	positioning={{ placement: 'top' }}
-	triggerBase="card {background} relative flex h-10 w-fit min-w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-sm"
-	contentBase="card {background} border-[1px] shadow-sm p-4 max-w-[calc(100vw-30px)] text-center"
+	triggerBase="card {background} relative flex h-10 w-fit min-w-8 items-center justify-center overflow-hidden border-[1px] p-2 text-center shadow-xs"
+	contentBase="card {background} border-[1px] shadow-xs p-4 max-w-[calc(100vw-30px)] text-center"
 	openDelay={0}
 	closeDelay={50}
 	closeOnClick={false}

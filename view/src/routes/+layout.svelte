@@ -9,7 +9,7 @@
 
 <ToastProvider>
 	<div class="mx-auto flex h-full max-w-7xl flex-col px-4 py-5">
-		<header class="flex-shrink-0">
+		<header class="shrink-0">
 			<div class="flex h-12 w-full items-center justify-between">
 				<a href="/" title="One Googol">
 					<h2 class="h2">10<sup>100</sup></h2>
@@ -36,7 +36,7 @@
 			</div>
 		</header>
 
-		<main class="flex flex-grow items-center justify-center">
+		<main class="flex grow items-center justify-center">
 			{@render children()}
 		</main>
 	</div>
