@@ -95,6 +95,7 @@
 					or <kbd class="kbd">Exponent</kbd> of the calculation!
 				</p>
 				<ul class="list-inside list-disc space-y-2">
+					<li>Upgrade Level: {counter.upgrade.level}</li>
 					<li>
 						Upgrades: {counter.upgrade.base} * <kbd class="kbd">Base</kbd>, {counter.upgrade
 							.exponent} *
@@ -105,7 +106,6 @@
 							>√{counter.count.value.length} + {counter.upgrade.exponent}</sup
 						>
 					</li>
-					<li>Current upgrade level: {counter.upgrade.level}</li>
 				</ul>
 			</article>
 			<footer class="flex justify-end gap-4">
@@ -138,6 +138,7 @@
 					{/if}
 				</p>
 				<ul class="list-inside list-disc space-y-2">
+					<li>Upgrade Level: {counter.upgrade.level}</li>
 					<li>
 						Upgrades: {counter.upgrade.base} * <kbd class="kbd">Base</kbd>, {counter.upgrade
 							.exponent} *
@@ -148,7 +149,6 @@
 							>√{counter.count.value.length} + {counter.upgrade.exponent}</sup
 						>
 					</li>
-					<li>Current upgrade level: {counter.upgrade.level}</li>
 				</ul>
 			</article>
 			<footer class="flex justify-end gap-4">
