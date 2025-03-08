@@ -55,11 +55,11 @@ cross build -r --target aarch64-unknown-linux-gnu
 ```
 _Starts the server on localhost at port 8080, serves the frontend from ./public, uses ./data/counter.txt for data persistence, and the ./cert directory for tls configuration._
 
-## Todo
+## Todos
 
-- [ ] Add increase timer vote system (base, exponent, etc. like kind or smth)
-  - [ ] Reaching Count Values/Levels (10th length) -> Upgrades:
+- [x] Add increase timer vote system (base, exponent, etc. like kind or smth)
+  - [x] Reaching Count Values/Levels (10th length) -> Upgrades:
     - [x] Vote on what gets upgraded (5 min time)
     - [x] Exponent +1 (addition modifier)
     - [x] Base/User +1 (multiply modifier)
-    - [ ] Add at Level 4: Clicking yourself +Clicking Multiplier (exponent + base), maybe: Auto Clickers (Upgrading them)
+- [x] Add Clicking yourself +Clicking Multiplier (exponent + base)
