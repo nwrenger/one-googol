@@ -23,14 +23,19 @@
 			<span class="text-primary-500">increment</span>
 			and <span class="text-tertiary-500">decrement</span> selector, on each side of this selector
 			are the counts of other clients and under that an
-			<span class="text-secondary-500">Upgrades/Upgrade Poll</span> Button which opens a modal with upgrade
-			info. The counter and poll counter/results will be shown to you in real-time (refreshed every 250ms)
-			by utilizing a WebSocket connection to the server.
+			<span class="text-primary-500">increment</span>/<span class="text-tertiary-500"
+				>decrement</span
+			>
+			Action Button, which is for the user to actively increase the counter, and a
+			<span class="text-secondary-500">Upgrades/Upgrade Poll</span> Button, which opens a modal with
+			upgrade info. The counter and poll counter/results will be shown to you in real-time (refreshed
+			every 250ms) by utilizing a WebSocket connection to the server.
 		</p>
 		<p>
 			The 5-minute poll countdown will only begin if at least one option has more votes than the
-			others. Closing the counter view will close the WebSocket connection and, therefore, also
-			remove your vote and counter selection!
+			others. When the majority has voted, the timer will count down quadruple as fast. Closing the
+			counter view will close the WebSocket connection and, therefore, also remove your vote and
+			counter selection!
 		</p>
 	</section>
 
@@ -43,12 +48,13 @@
 				class="text-secondary-500">violet-colored number cards</span
 			>. Concretely:
 		</p>
-		<pre class="pre">step = (player_count * base_factor)<sup
-				>√(counter_length + exponent_factor)</sup
+		<pre class="pre">step = (player_count * base_factor)<sup>√counter_length + exponent_factor</sup
 			></pre>
 		<p>
 			This <strong>step</strong> value is added to the counter every 250 ms. When you hover over the
-			player count cards, you can see the currently calculated step.
+			player count cards, you can see the currently calculated step. Also the scaling for the Action
+			Button uses a similar scaling but instead of the player_count it uses the current upgrade level
+			(+1).
 		</p>
 	</section>
 

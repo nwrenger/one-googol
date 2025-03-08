@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Lightswitch from '$lib/components/Lightswitch.svelte';
 	import { ToastProvider } from '@skeletonlabs/skeleton-svelte';
 	import { Dot } from 'lucide-svelte';
 	import '../app.css';
@@ -30,8 +29,6 @@
 					>
 						Github
 					</a>
-					<Dot />
-					<Lightswitch />
 				</div>
 			</div>
 		</header>

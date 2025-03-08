@@ -7,8 +7,6 @@
 @import '@skeletonlabs/skeleton/optional/presets';
 @import '@skeletonlabs/skeleton/themes/cerberus';
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 @layer base {
 	html,
 	body {

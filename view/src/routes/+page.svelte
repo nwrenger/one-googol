@@ -6,9 +6,10 @@
 		type: CounterKind;
 	}
 
-	interface Count {
+	export interface Count {
 		value: string;
 		meter: CountMeter;
+		accumulated_actions: number;
 	}
 
 	export interface Poll {
@@ -57,13 +58,18 @@
 	import { getContext, onDestroy } from 'svelte';
 	import ClientCounter from '$lib/components/ClientCounter.svelte';
 	import ModalUpgrades from '$lib/components/ModalUpgrades.svelte';
+	import ActionButton from '$lib/components/ActionButton.svelte';
 
 	const GOOGOL = (10n ** 100n).toString();
 	const GOOGOL_LENGTH = 101;
 	const toast: ToastContext = getContext('toast');
 
 	let counter: Counter = $state({
-		count: { value: '0', meter: { increment: 0, decrement: 0, pending: 0 } },
+		count: {
+			value: '0',
+			meter: { increment: 0, decrement: 0, pending: 0 },
+			accumulated_actions: 0
+		},
 		poll: null,
 		upgrade: { level: 0, last_upgrade: PollState.Pending, base: 1, exponent: 0 },
 		type: CounterKind.Auto
@@ -146,6 +152,20 @@
 			socket?.send(increaseType);
 		}
 	}
+
+	function onAction() {
+		if (connected && $increaseType != '') {
+			socket?.send('action');
+		}
+	}
+
+	let actionBackground = $derived(
+		$increaseType != ''
+			? $increaseType == 'increment'
+				? 'border-primary-500 shadow-primary-500 preset-tonal-primary'
+				: 'border-tertiary-500 shadow-tertiary-500 preset-tonal-tertiary'
+			: 'border-surface-950 shadow-surface-950 preset-tonal-surface dark:border-surface-50 dark:shadow-surface-50'
+	);
 </script>
 
 <svelte:head>
@@ -190,7 +210,7 @@
 		{#each counter_splitted as digit, i}
 			<DigitScroller
 				{digit}
-				highlighted={(i - 1) % 10 == 0 && counter.count.value.length - 1 < Math.abs(100 - i)}
+				highlighted={(i - 9) % 10 == 0 && counter.count.value.length - 1 < Math.abs(100 - i)}
 				{disabled}
 			/>
 		{/each}
@@ -224,5 +244,7 @@
 		/>
 	</div>
 
-	<ModalUpgrades poll={counter.poll} upgrade={counter.upgrade} {disabledClass} {connected} />
+	<ActionButton onclick={onAction} {counter} {connected} background={actionBackground} />
+
+	<ModalUpgrades {counter} {disabledClass} {connected} />
 </div>

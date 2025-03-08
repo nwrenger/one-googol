@@ -67,13 +67,29 @@ impl Counter {
     }
 
     /// Updates the counter based on the provided counter states
-    pub fn update_count(&mut self, counter_states: &[CounterState]) {
-        self.count.meter = CounterState::meter_counter(counter_states);
+    pub fn update_count(&mut self, counter_all: &[(CounterState, usize)]) {
+        let mut counter_states = vec![];
+        self.count.accumulated_actions = 0;
+
+        for (counter_state, action_clicks) in counter_all {
+            counter_states.push(counter_state.clone());
+            let action_clicks = (*action_clicks) as isize;
+            if counter_state == &CounterState::Increment {
+                self.count.accumulated_actions += action_clicks;
+            } else if counter_state == &CounterState::Decrement {
+                self.count.accumulated_actions -= action_clicks;
+            }
+        }
+
+        self.count.meter = CounterState::meter_counter(&counter_states);
 
         let cmp_step = Self::compute_step(&self.count.value);
 
+        let actions_modifier = self.count.accumulated_actions * self.upgrade.modifier(cmp_step);
+
         let step_increment = BigInt::from(self.count.meter.increment * self.upgrade.base)
-            .pow(cmp_step + self.upgrade.exponent);
+            .pow(cmp_step + self.upgrade.exponent)
+            + actions_modifier.max(0);
 
         self.count.value += step_increment;
         let one_googol = BigInt::parse_bytes(util::ONE_GOOGOL.as_bytes(), 10).unwrap();
@@ -82,7 +98,8 @@ impl Counter {
         }
 
         let step_decrement = BigInt::from(self.count.meter.decrement * self.upgrade.base)
-            .pow(cmp_step + self.upgrade.exponent);
+            .pow(cmp_step + self.upgrade.exponent)
+            + (-actions_modifier).max(0);
 
         if self.count.value != one_googol {
             self.count.value -= step_decrement.clone();
@@ -129,7 +146,7 @@ impl Counter {
     /// Returns true if at an upgrade and increases the upgrade level accordingly
     fn is_at_upgrade(&mut self) -> bool {
         let length = self.count_string().len();
-        let level = length / 10;
+        let level = (length + 8) / 10;
         if level > self.upgrade.level {
             self.upgrade.level = level;
             true
@@ -147,6 +164,7 @@ pub struct Count {
     )]
     pub value: BigInt,
     pub meter: CountMeter,
+    pub accumulated_actions: isize,
 }
 
 #[derive(Debug, Serialize, Clone, Deserialize, PartialEq, Eq)]
@@ -175,9 +193,14 @@ impl Poll {
     pub fn tick(&mut self) -> bool {
         if self.time_remaining == 0 {
             return true;
+        } else if self.meter.base == self.meter.exponent {
+            return false;
         }
-        if self.meter.base != self.meter.exponent {
-            self.time_remaining -= 1;
+
+        if self.meter.pending < self.meter.base + self.meter.exponent {
+            self.time_remaining = self.time_remaining.saturating_sub(4);
+        } else {
+            self.time_remaining = self.time_remaining.saturating_sub(1);
         }
         false
     }
@@ -205,6 +228,12 @@ impl Upgrade {
             base: 1,
             exponent: 0,
         }
+    }
+
+    pub fn modifier(&self, cmp_step: u32) -> isize {
+        let level = self.level as isize;
+        let base = self.base as isize;
+        ((level + 1) * base).pow(cmp_step + self.exponent)
     }
 }
 

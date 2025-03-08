@@ -38,14 +38,15 @@ impl WebSocketState {
 }
 
 /// Represents a connected WebSocket client
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Client {
     pub counter_state: CounterState,
+    pub action_clicks: usize,
     pub poll_state: PollState,
 }
 
 /// Client counter state
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub enum CounterState {
     #[default]
     Pending = 0,
@@ -104,9 +105,19 @@ pub fn spawn_updater(state: Arc<WebSocketState>) {
                 let clients = state.clients.read().await;
                 clients
                     .values()
-                    .map(|client| (client.counter_state.clone(), client.poll_state.clone()))
-                    .collect::<(Vec<_>, Vec<_>)>()
+                    .map(|client| {
+                        (
+                            (client.counter_state.clone(), client.action_clicks),
+                            client.poll_state.clone(),
+                        )
+                    })
+                    .collect::<(Vec<(_, _)>, Vec<_>)>()
             };
+
+            // Reset clicks
+            for client in state.clients.write().await.values_mut() {
+                client.action_clicks = 0;
+            }
 
             let mut counter = state.counter.write().await;
 
@@ -146,13 +157,7 @@ async fn handle_socket(stream: WebSocket, state: Arc<WebSocketState>) {
     };
 
     let mut clients = state.clients.write().await;
-    clients.insert(
-        client_id,
-        Client {
-            counter_state: CounterState::default(),
-            poll_state: PollState::default(),
-        },
-    );
+    clients.insert(client_id, Client::default());
     drop(clients);
 
     let send_task = tokio::spawn(async move {
@@ -178,7 +183,6 @@ async fn handle_socket(stream: WebSocket, state: Arc<WebSocketState>) {
                         client.counter_state = CounterState::Decrement;
                     }
                 }
-                // todo generalize/add more options later
                 "base" => {
                     let mut clients = state.clients.write().await;
                     if let Some(client) = clients.get_mut(&client_id) {
@@ -189,6 +193,12 @@ async fn handle_socket(stream: WebSocket, state: Arc<WebSocketState>) {
                     let mut clients = state.clients.write().await;
                     if let Some(client) = clients.get_mut(&client_id) {
                         client.poll_state = PollState::Exponent;
+                    }
+                }
+                "action" => {
+                    let mut clients = state.clients.write().await;
+                    if let Some(client) = clients.get_mut(&client_id) {
+                        client.action_clicks += 1;
                     }
                 }
                 _ => {
