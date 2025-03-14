@@ -6,12 +6,13 @@
 
 	interface Props {
 		counter: Counter;
-		connected: boolean;
+		disabled: boolean;
 		background: string;
+		disabledClass: string;
 		onclick?: () => void;
 	}
 
-	let { counter, connected, background, onclick = () => {} }: Props = $props();
+	let { counter, disabled, background, disabledClass, onclick = () => {} }: Props = $props();
 
 	const duration = 500;
 	let things: any[] = $state([]);
@@ -73,13 +74,13 @@
 
 <Tooltip
 	{open}
+	{disabled}
 	onOpenChange={(e) => (open = e.open)}
 	positioning={{ placement: 'bottom' }}
 	triggerBase="relative"
 	contentBase="card {background} border-[1px] p-3 max-w-[calc(100vw-30px)] text-center z-[999] shadow"
 	openDelay={0}
 	closeDelay={50}
-	disabled={!($increaseType != '' && connected)}
 	closeOnClick={false}
 	closeOnPointerDown={false}
 >
@@ -87,8 +88,8 @@
 		<button
 			type="button"
 			onclick={handleClick}
-			class="{background} btn btn-lg relative flex touch-manipulation items-center gap-2 border shadow transition-transform duration-150 enabled:hover:scale-105 enabled:active:scale-90"
-			disabled={!($increaseType != '' && connected)}
+			{disabled}
+			class="{background} {disabledClass} btn btn-lg relative flex touch-manipulation items-center gap-2 border shadow transition-transform duration-150 enabled:hover:scale-105 enabled:active:scale-90"
 			title={actionLabel()}
 		>
 			<MousePointerClick />

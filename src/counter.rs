@@ -19,7 +19,6 @@ pub struct Counter {
     pub count: Count,
     pub poll: Option<Poll>,
     pub upgrade: Upgrade,
-    pub kind: CounterKind,
 }
 
 impl Default for Counter {
@@ -35,7 +34,6 @@ impl Counter {
             count: Count::default(),
             poll: None,
             upgrade: Upgrade::default(),
-            kind: CounterKind::default(),
         }
     }
 
@@ -73,7 +71,7 @@ impl Counter {
 
         for (counter_state, action_clicks) in counter_all {
             counter_states.push(counter_state.clone());
-            let action_clicks = (*action_clicks) as isize;
+            let action_clicks = (*action_clicks) as i64;
             if counter_state == &CounterState::Increment {
                 self.count.accumulated_actions += action_clicks;
             } else if counter_state == &CounterState::Decrement {
@@ -85,11 +83,24 @@ impl Counter {
 
         let cmp_step = Self::compute_step(&self.count.value);
 
-        let actions_modifier = self.count.accumulated_actions * self.upgrade.modifier(cmp_step);
+        // Compute the modifier in BigInt to avoid overflow
+        let actions_modifier =
+            BigInt::from(self.count.accumulated_actions) * self.upgrade.modifier(cmp_step);
+        let positive_modifier = if actions_modifier > BigInt::zero() {
+            actions_modifier.clone()
+        } else {
+            BigInt::zero()
+        };
+        let negative_modifier = if actions_modifier < BigInt::zero() {
+            -actions_modifier.clone()
+        } else {
+            BigInt::zero()
+        };
 
-        let step_increment = BigInt::from(self.count.meter.increment * self.upgrade.base)
-            .pow(cmp_step + self.upgrade.exponent)
-            + actions_modifier.max(0);
+        let step_increment = (BigInt::from(self.count.meter.increment)
+            * BigInt::from(self.upgrade.base))
+        .pow(cmp_step + self.upgrade.exponent)
+            + positive_modifier;
 
         self.count.value += step_increment;
         let one_googol = BigInt::parse_bytes(util::ONE_GOOGOL.as_bytes(), 10).unwrap();
@@ -97,12 +108,13 @@ impl Counter {
             self.count.value = one_googol.clone();
         }
 
-        let step_decrement = BigInt::from(self.count.meter.decrement * self.upgrade.base)
-            .pow(cmp_step + self.upgrade.exponent)
-            + (-actions_modifier).max(0);
+        let step_decrement = (BigInt::from(self.count.meter.decrement)
+            * BigInt::from(self.upgrade.base))
+        .pow(cmp_step + self.upgrade.exponent)
+            + negative_modifier;
 
         if self.count.value != one_googol {
-            self.count.value -= step_decrement.clone();
+            self.count.value -= step_decrement;
             if self.count.value < BigInt::zero() {
                 self.count.value = BigInt::zero();
             }
@@ -164,7 +176,7 @@ pub struct Count {
     )]
     pub value: BigInt,
     pub meter: CountMeter,
-    pub accumulated_actions: isize,
+    pub accumulated_actions: i64,
 }
 
 #[derive(Debug, Serialize, Clone, Deserialize, PartialEq, Eq)]
@@ -230,10 +242,11 @@ impl Upgrade {
         }
     }
 
-    pub fn modifier(&self, cmp_step: u32) -> isize {
-        let level = self.level as isize;
-        let base = self.base as isize;
-        ((level + 1) * base).pow(cmp_step + self.exponent)
+    // Use BigInt for the modifier to avoid fixed-size integer overflow.
+    pub fn modifier(&self, cmp_step: u32) -> BigInt {
+        let factor = BigInt::from(self.level as i64 + 1) * BigInt::from(self.base as i64);
+        let exp = cmp_step + self.exponent;
+        factor.pow(exp)
     }
 }
 
@@ -251,12 +264,4 @@ pub struct PollMeter {
     pub base: u32,
     pub exponent: u32,
     pub pending: u32,
-}
-
-#[derive(Debug, Default, Serialize, Clone, Copy, Deserialize, PartialEq, Eq)]
-pub enum CounterKind {
-    #[default]
-    Auto,
-    CookieClicker,
-    // todo more
 }

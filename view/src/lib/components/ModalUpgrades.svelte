@@ -7,7 +7,6 @@
 	interface Props {
 		counter: Counter;
 		disabledClass: string;
-		connected: boolean;
 	}
 
 	const toast: ToastContext = getContext('toast');

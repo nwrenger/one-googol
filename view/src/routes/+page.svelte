@@ -3,7 +3,6 @@
 		count: Count;
 		poll: Poll | null;
 		upgrade: Upgrade;
-		type: CounterKind;
 	}
 
 	export interface Count {
@@ -23,11 +22,6 @@
 		last_upgrade: PollState;
 		base: number;
 		exponent: number;
-	}
-
-	enum CounterKind {
-		Auto = 'Auto',
-		CookieClicker = 'CookieClicker'
 	}
 
 	interface CountMeter {
@@ -71,8 +65,7 @@
 			accumulated_actions: 0
 		},
 		poll: null,
-		upgrade: { level: 0, last_upgrade: PollState.Pending, base: 1, exponent: 0 },
-		type: CounterKind.Auto
+		upgrade: { level: 0, last_upgrade: PollState.Pending, base: 1, exponent: 0 }
 	});
 	let counter_splitted = $derived(counter.count.value.padStart(GOOGOL_LENGTH, '0').split(''));
 	let socket = connect();
@@ -244,7 +237,13 @@
 		/>
 	</div>
 
-	<ActionButton onclick={onAction} {counter} {connected} background={actionBackground} />
+	<ActionButton
+		onclick={onAction}
+		{counter}
+		{disabledClass}
+		{disabled}
+		background={actionBackground}
+	/>
 
-	<ModalUpgrades {counter} {disabledClass} {connected} />
+	<ModalUpgrades {counter} {disabledClass} />
 </div>
