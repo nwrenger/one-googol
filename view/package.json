@@ -13,22 +13,22 @@
 		"lint": "prettier --check ."
 	},
 	"devDependencies": {
-		"@skeletonlabs/skeleton": "3.1.0",
+		"@skeletonlabs/skeleton": "3.1.1",
 		"@skeletonlabs/skeleton-svelte": "1.0.0",
 		"@sveltejs/adapter-static": "3.0.8",
-		"@sveltejs/kit": "2.19.1",
+		"@sveltejs/kit": "2.20.2",
 		"@sveltejs/vite-plugin-svelte": "5.0.3",
 		"@tailwindcss/typography": "0.5.16",
-		"@tailwindcss/vite": "4.0.14",
-		"lucide-svelte": "0.482.0",
+		"@tailwindcss/vite": "4.0.17",
+		"lucide-svelte": "0.484.0",
 		"prettier": "3.5.3",
 		"prettier-plugin-svelte": "3.3.3",
 		"prettier-plugin-tailwindcss": "0.6.11",
-		"svelte": "5.23.0",
+		"svelte": "5.25.3",
 		"svelte-check": "4.1.5",
 		"svelte-confetti": "2.3.1",
-		"tailwindcss": "4.0.14",
+		"tailwindcss": "4.0.17",
 		"typescript": "5.8.2",
-		"vite": "6.2.2"
+		"vite": "6.2.3"
 	}
 }

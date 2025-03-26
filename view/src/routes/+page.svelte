@@ -73,7 +73,6 @@
 	let interval: number | undefined = undefined;
 	let googol_reached = $derived(counter.count.value === GOOGOL);
 	let disabled = $derived(googol_reached || !connected);
-	let disabledClass = $derived(disabled ? 'opacity-40 pointer-events-none' : '');
 
 	$effect(() => {
 		if (!connected) reconnect();
@@ -211,15 +210,17 @@
 
 	<div class="flex items-center space-x-2 sm:space-x-3">
 		<ClientCounter
-			background="{disabledClass} border-primary-500 shadow-primary-500 preset-tonal-primary"
+			background="border-primary-500 shadow-primary-500 preset-tonal-primary"
 			increase={counter.count.meter.increment}
 			{counter}
+			{disabled}
 		/>
 
 		<Segment
 			name="increaseType"
-			background="{disabledClass} preset-outlined-surface-950-50 preset-tonal-surface shadow-xs shadow-surface-950 dark:shadow-surface-50"
+			background="preset-outlined-surface-950-50 preset-tonal-surface shadow-xs shadow-surface-950 dark:shadow-surface-50 disabled:pointer-events-none disabled:opacity-40"
 			value={$increaseType}
+			{disabled}
 			onValueChange={(e) => ($increaseType = e.value || '')}
 		>
 			<Segment.Item {disabled} value="increment">
@@ -231,19 +232,14 @@
 		</Segment>
 
 		<ClientCounter
-			background="{disabledClass} border-tertiary-500 shadow-tertiary-500 preset-tonal-tertiary"
+			background="border-tertiary-500 shadow-tertiary-500 preset-tonal-tertiary"
 			increase={-counter.count.meter.decrement}
 			{counter}
+			{disabled}
 		/>
 	</div>
 
-	<ActionButton
-		onclick={onAction}
-		{counter}
-		{disabledClass}
-		{disabled}
-		background={actionBackground}
-	/>
+	<ActionButton onclick={onAction} {counter} {disabled} background={actionBackground} />
 
-	<ModalUpgrades {counter} {disabledClass} />
+	<ModalUpgrades {counter} {disabled} />
 </div>

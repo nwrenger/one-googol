@@ -6,12 +6,12 @@
 
 	interface Props {
 		counter: Counter;
-		disabledClass: string;
+		disabled: boolean;
 	}
 
 	const toast: ToastContext = getContext('toast');
 
-	let { counter, disabledClass }: Props = $props();
+	let { counter, disabled }: Props = $props();
 	let openState = $state(false);
 	let modalOpenedOnce = $state(false);
 	let pollFinished = $state(false);
@@ -52,7 +52,8 @@
 <Modal
 	open={openState}
 	onOpenChange={(e) => (openState = e.open)}
-	triggerBase="{disabledClass} btn preset-tonal-secondary border-[1px] border-secondary-500 shadow-xs shadow-secondary-500"
+	triggerBase="{!disabled ||
+		'pointer-events-none opacity-40'} btn preset-tonal-secondary border-[1px] border-secondary-500 shadow-xs shadow-secondary-500"
 	contentBase="card preset-tonal-secondary border-[1px] border-secondary-500 p-4 space-y-4 shadow-xl max-w-(--breakpoint-sm)"
 	backdropClasses="backdrop-blur-xs"
 >

@@ -8,11 +8,10 @@
 		counter: Counter;
 		disabled: boolean;
 		background: string;
-		disabledClass: string;
 		onclick?: () => void;
 	}
 
-	let { counter, disabled, background, disabledClass, onclick = () => {} }: Props = $props();
+	let { counter, disabled, background, onclick = () => {} }: Props = $props();
 
 	const duration = 500;
 	let things: any[] = $state([]);
@@ -40,8 +39,8 @@
 		const target = event.currentTarget as HTMLElement;
 		const { clientX, clientY } = event;
 		const rect = target.getBoundingClientRect();
-		const x = clientX - rect.left;
-		const y = clientY - rect.top;
+		const x = clientX - rect.x - rect.width / 2 + 18;
+		const y = clientY - rect.y - rect.height / 2 + 18;
 
 		things = [...things, { x, y }];
 
@@ -74,10 +73,10 @@
 
 <Tooltip
 	{open}
-	{disabled}
+	disabled={disabled || !$increaseType}
 	onOpenChange={(e) => (open = e.open)}
 	positioning={{ placement: 'bottom' }}
-	triggerBase="relative"
+	triggerBase="relative {!disabled || 'pointer-events-none opacity-40'}"
 	contentBase="card {background} border-[1px] p-3 max-w-[calc(100vw-30px)] text-center z-[999] shadow"
 	openDelay={0}
 	closeDelay={50}
@@ -88,8 +87,8 @@
 		<button
 			type="button"
 			onclick={handleClick}
-			{disabled}
-			class="{background} {disabledClass} btn btn-lg relative flex touch-manipulation items-center gap-2 border shadow transition-transform duration-150 enabled:hover:scale-105 enabled:active:scale-90"
+			disabled={!$increaseType}
+			class="{background} btn btn-lg relative flex touch-manipulation items-center gap-2 border shadow transition-transform duration-150 enabled:hover:scale-105 enabled:active:scale-90 disabled:pointer-events-none"
 			title={actionLabel()}
 		>
 			<MousePointerClick />
@@ -98,11 +97,10 @@
 
 		{#each things as thing (thing)}
 			<div
-				class="floating-text pointer-events-none text-lg text-nowrap select-none {actionText()} absolute"
-				style="left: {thing.x}px; top: {thing.y}px"
+				class="floating-text pointer-events-none text-lg whitespace-nowrap select-none {actionText()} absolute"
+				style="left: {thing.x}px; top: {thing.y}px;"
 			>
-				{$increaseType == 'increment' ? '+' : '-'}
-				{displayResult}
+				{$increaseType === 'increment' ? '+' : '-'}{displayResult}
 			</div>
 		{/each}
 	{/snippet}
