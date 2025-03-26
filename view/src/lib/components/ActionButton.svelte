@@ -99,14 +99,14 @@
 
 		<div
 			bind:this={counter_div}
-			class="pointer-events-none absolute w-fit select-none whitespace-nowrap text-lg opacity-0 {actionText()}"
+			class="pointer-events-none absolute w-fit text-lg whitespace-nowrap opacity-0 select-none {actionText()}"
 		>
 			{$increaseType === 'increment' ? '+' : '-'}{displayResult}
 		</div>
 
 		{#each things as thing (thing)}
 			<div
-				class="floating-text pointer-events-none w-fit select-none whitespace-nowrap text-lg {actionText()} absolute"
+				class="floating-text pointer-events-none w-fit text-lg whitespace-nowrap select-none {actionText()} absolute"
 				style="left: {thing.x}px; top: {thing.y}px;"
 			>
 				{$increaseType === 'increment' ? '+' : '-'}{displayResult}
