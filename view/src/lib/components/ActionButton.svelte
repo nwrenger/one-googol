@@ -16,6 +16,7 @@
 	const duration = 500;
 	let things: any[] = $state([]);
 	let timeout: ReturnType<typeof setTimeout>;
+	let counter_div: HTMLDivElement | undefined = $state();
 
 	let base = $derived((counter.upgrade.level + 1) * counter.upgrade.base);
 	let exp = $derived(Math.sqrt(counter.count.value.length) + counter.upgrade.exponent);
@@ -39,8 +40,9 @@
 		const target = event.currentTarget as HTMLElement;
 		const { clientX, clientY } = event;
 		const rect = target.getBoundingClientRect();
-		const x = clientX - rect.x - rect.width / 2 + 18;
-		const y = clientY - rect.y - rect.height / 2 + 18;
+		const counter_rect = counter_div?.getBoundingClientRect() || new DOMRect();
+		const x = clientX - rect.left - counter_rect.width / 2;
+		const y = clientY - rect.top - counter_rect.height / 2;
 
 		things = [...things, { x, y }];
 
@@ -95,9 +97,16 @@
 			<span class="text-base">{actionLabel()}</span>
 		</button>
 
+		<div
+			bind:this={counter_div}
+			class="pointer-events-none absolute w-fit select-none whitespace-nowrap text-lg opacity-0 {actionText()}"
+		>
+			{$increaseType === 'increment' ? '+' : '-'}{displayResult}
+		</div>
+
 		{#each things as thing (thing)}
 			<div
-				class="floating-text pointer-events-none text-lg whitespace-nowrap select-none {actionText()} absolute"
+				class="floating-text pointer-events-none w-fit select-none whitespace-nowrap text-lg {actionText()} absolute"
 				style="left: {thing.x}px; top: {thing.y}px;"
 			>
 				{$increaseType === 'increment' ? '+' : '-'}{displayResult}
