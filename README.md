@@ -20,12 +20,14 @@ The Svelte-based frontend provides an interactive user interface for participant
 ## Development
 
 1. Build Frontend:
+
 ```sh
 cd view
 bun run build
 ```
 
 2. Run Server:
+
 ```sh
 ./data/cert/gen.sh
 cargo run -- localhost:8080 -c data/counter.json -v view/build --cert data/cert/cert.pem --key data/cert/key.pem
@@ -34,12 +36,14 @@ cargo run -- localhost:8080 -c data/counter.json -v view/build --cert data/cert/
 ## Building
 
 1. Build Frontend:
+
 ```sh
 cd view
 bun run build
 ```
 
 2. Build Backend:
+
 ```sh
 cd ..
 # For your platform
@@ -53,6 +57,7 @@ cross build -r --target aarch64-unknown-linux-gnu
 ```sh
 ./one-googol localhost:8080 -v ./public -d ./data/counter.txt --cert ./cert/cert.pem --key ./cert/key.pem
 ```
+
 _Starts the server on localhost at port 8080, serves the frontend from ./public, uses ./data/counter.txt for data persistence, and the ./cert directory for tls configuration._
 
 ## Todos

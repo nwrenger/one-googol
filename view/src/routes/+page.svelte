@@ -46,17 +46,17 @@
 <script lang="ts">
 	import { ArrowBigDown, ArrowBigUp } from 'lucide-svelte';
 	import DigitScroller from '$lib/components/DigitScroller.svelte';
-	import { Segment, type ToastContext } from '@skeletonlabs/skeleton-svelte';
+	import { toaster } from './+layout.svelte';
+	import { Segment } from '@skeletonlabs/skeleton-svelte';
 	import Confetti from 'svelte-confetti';
 	import { increaseType, pollType } from '$lib';
-	import { getContext, onDestroy } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import ClientCounter from '$lib/components/ClientCounter.svelte';
 	import ModalUpgrades from '$lib/components/ModalUpgrades.svelte';
 	import ActionButton from '$lib/components/ActionButton.svelte';
 
 	const GOOGOL = (10n ** 100n).toString();
 	const GOOGOL_LENGTH = 101;
-	const toast: ToastContext = getContext('toast');
 
 	let counter: Counter = $state({
 		count: {
@@ -83,7 +83,8 @@
 	onDestroy(() => {
 		socket?.close();
 		clearInterval(interval);
-		createClosed();
+		// Arbitrary timeout needed for preserving state
+		setTimeout(createClosed, 1);
 	});
 
 	function connect(): WebSocket | undefined {
@@ -118,11 +119,15 @@
 	}
 
 	function createConnecting() {
-		toast.create({ title: 'WebSocket', description: 'Connecting...', duration: 2_500 });
+		toaster.create({
+			title: 'WebSocket',
+			description: 'Connecting...',
+			duration: 2_500
+		});
 	}
 
 	function createConnected() {
-		toast.create({
+		toaster.create({
 			title: 'WebSocket',
 			description: 'Connected!',
 			type: 'success',
@@ -131,7 +136,7 @@
 	}
 
 	function createClosed() {
-		toast.create({
+		toaster.create({
 			title: 'WebSocket',
 			description: 'Connection Closed!',
 			type: 'error',
