@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Modal, ProgressRing, type ToastContext } from '@skeletonlabs/skeleton-svelte';
-	import { PollState, type Counter, type Poll, type Upgrade } from '../../routes/+page.svelte';
+	import { PollState, type Counter } from '../../routes/+page.svelte';
 	import { pollType } from '$lib';
 	import { getContext } from 'svelte';
 
@@ -97,13 +97,14 @@
 				<ul class="list-inside list-disc space-y-2">
 					<li>Upgrade Level: {counter.upgrade.level}</li>
 					<li>
-						Upgrades: {counter.upgrade.base} * <kbd class="kbd">Base</kbd>, {counter.upgrade
-							.exponent} *
-						<kbd class="kbd">Exponent</kbd>
+						Upgrades: <kbd class="kbd">Base</kbd> * {counter.upgrade.base},
+						<kbd class="kbd">Exponent</kbd> + {counter.upgrade.exponent}
 					</li>
 					<li>
-						Formula: (player_count/upgrade_level * {counter.upgrade.base})<sup
-							>√{counter.count.value.length} + {counter.upgrade.exponent}</sup
+						Formula: (player_count/upgrade_level * <kbd class="kbd">{counter.upgrade.base}</kbd
+						>)<sup
+							>√{counter.count.value.length} +
+							<kbd class="kbd text-xs!">{counter.upgrade.exponent}</kbd></sup
 						>
 					</li>
 				</ul>
