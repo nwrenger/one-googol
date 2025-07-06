@@ -88,7 +88,7 @@
 	{#snippet trigger()}
 		<button
 			type="button"
-			onclick={handleClick}
+			onpointerdown={handleClick}
 			disabled={!$increaseType}
 			class="{background} btn btn-lg relative flex touch-manipulation items-center gap-2 border shadow transition-transform duration-150 enabled:hover:scale-105 enabled:active:scale-90 disabled:pointer-events-none"
 			title={actionLabel()}
